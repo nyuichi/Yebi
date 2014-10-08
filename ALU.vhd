@@ -2,7 +2,6 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.std_logic_misc.all;
 use IEEE.numeric_std.all;
-use IEEE.std_logic_arith.all;
 use IEEE.std_logic_unsigned.all;
 
 entity ALU is
@@ -17,7 +16,7 @@ end ALU;
 
 architecture Behavioral of ALU is
 
-  signal mycode : std_logic_vector(1 downto 0);
+  signal mycode : std_logic_vector(1 downto 0) := "00";
   signal myarg0 : std_logic_vector(31 downto 0);
   signal myarg1 : std_logic_vector(31 downto 0);
   signal myival : std_logic_vector(31 downto 0);
@@ -49,8 +48,10 @@ begin
         else
           retv <= std_logic_vector(shift_right(unsigned(myarg0), -to_integer(signed(ival))));
         end if;
-      when "01" =>
+      when "11" =>
         retv <= not myarg0(31) & myarg0(30 downto 0);
+      when others =>
+        assert false;
     end case;
   end process;
 

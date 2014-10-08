@@ -1,9 +1,10 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
+use IEEE.std_logic_arith.all;
+use IEEE.std_logic_unsigned.all;
 
 entity ALU_tb is
-  port (
-    );
+  -- pass
 end ALU_tb;
 
 architecture Behavioral of ALU_tb is
@@ -20,7 +21,7 @@ architecture Behavioral of ALU_tb is
 
   signal clk_gen : std_logic;
 
-  signal mycode : std_logic_vector(1 downto 0);
+  signal mycode : std_logic_vector(1 downto 0) := "00";
   signal myarg0 : std_logic_vector(31 downto 0);
   signal myarg1 : std_logic_vector(31 downto 0);
   signal myival : std_logic_vector(31 downto 0);
@@ -55,13 +56,13 @@ begin
 
     wait for 15 ns;
 
-    myarg0 <= 100;
-    myarg1 <= 200;
-    ival <= 300;
+    myarg0 <= x"00000064";
+    myarg1 <= x"000000c8";
+    myival <= x"0000012c";
 
     wait for 30 ns;
 
-    assert retv == 300 report "NG";
+    assert myretv = x"00000258" report "this";
 
     -- SUB
 
@@ -69,13 +70,13 @@ begin
 
     wait for 15 ns;
 
-    myarg0 <= 100;
-    myarg1 <= 200;
-    ival <= 0;
+    myarg0 <= x"00000064";
+    myarg1 <= x"000000c8";
+    myival <= x"0000012c";
 
     wait for 30 ns;
 
-    assert retv == -100 report "NG";
+    assert myretv = x"ffffff9c";
 
     -- SHIFT LEFT
 
@@ -83,13 +84,13 @@ begin
 
     wait for 15 ns;
 
-    myarg0 <= 100;
-    myarg1 <= 0;
-    ival <= 3;
+    myarg0 <= x"00000064";
+    myarg1 <= x"00000000";
+    myival <= x"00000003";
 
     wait for 30 ns;
 
-    assert retv == 800 report "NG";
+    assert myretv = x"00000320";
 
     -- SHIFT RIGHT
 
@@ -97,13 +98,13 @@ begin
 
     wait for 15 ns;
 
-    myarg0 <= 100;
-    myarg1 <= 0;
-    ival <= -3;
+    myarg0 <= x"00000064";
+    myarg1 <= x"00000000";
+    myival <= x"fffffffd";
 
     wait for 30 ns;
 
-    assert retv == 12 report "NG";
+    assert myretv = x"0000000c";
 
     -- FNEG
 
@@ -111,13 +112,13 @@ begin
 
     wait for 15 ns;
 
-    myarg0 <= 2147483648;
-    myarg1 <= 0;
-    ival <= 0;
+    myarg0 <= x"80000000";
+    myarg1 <= x"00000000";
+    myival <= x"00000000";
 
     wait for 30 ns;
 
-    assert retv == 0 report "NG";
+    assert myretv = x"00000000";
 
   end process;
 
