@@ -17,9 +17,9 @@ end ALU;
 architecture Behavioral of ALU is
 
   signal mycode : std_logic_vector(1 downto 0) := "00";
-  signal myarg0 : std_logic_vector(31 downto 0);
-  signal myarg1 : std_logic_vector(31 downto 0);
-  signal myival : std_logic_vector(31 downto 0);
+  signal myarg0 : std_logic_vector(31 downto 0) := (others => '0');
+  signal myarg1 : std_logic_vector(31 downto 0) := (others => '0');
+  signal myival : std_logic_vector(31 downto 0) := (others => '0');
 
 begin
 
