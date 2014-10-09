@@ -1,7 +1,14 @@
+library IEEE;
+use IEEE.std_logic_1164.all;
+use IEEE.std_logic_misc.all;
+use IEEE.numeric_std.all;
+use IEEE.std_logic_unsigned.all;
+use work.Util.all;
+
 entity CPU is
   port (
     clk : in std_logic;
-    ram : array(15 downto 0) of std_logic_vector(31 downto 0));
+    ram : inout ram_t);
 end CPU;
 
 architecture Behavioral of CPU is
@@ -16,11 +23,11 @@ architecture Behavioral of CPU is
       retv : out std_logic_vector(31 downto 0));
   end component;
 
-  signal myregfile : array(15 downto 0) of std_logic_vector(31 downto 0) := (others => (others => '0'));
+  signal myregfile : regfile_t := (others => (others => '0'));
 
   -- Fetch
   signal mypc : std_logic_vector(31 downto 0);
-  signal mycode : std_logic_vector(3 downto 0);
+  signal mycode : std_logic_vector(31 downto 0);
 
   -- Decode
   signal myopcode : std_logic_vector(3 downto 0);
@@ -34,8 +41,8 @@ architecture Behavioral of CPU is
   signal myALUarg0 : std_logic_vector(31 downto 0);
   signal myALUarg1 : std_logic_vector(31 downto 0);
   signal myALUival : std_logic_vector(31 downto 0);
-  signal myALUretx : std_logic_vector(3 downto 0);
   signal myALUretv : std_logic_vector(31 downto 0);
+  signal mydestx : std_logic_vector(3 downto 0);
 
   -- Write
   signal myretx : std_logic_vector(3 downto 0);
@@ -49,7 +56,6 @@ begin
     arg0 => myALUarg0,
     arg1 => myALUarg1,
     ival => myALUival,
-    retx => myALUretx,
     retv => myALUretv);
 
   -----------
@@ -67,7 +73,7 @@ begin
   -- body
   process(mypc)
   begin
-    mycode <= ram(mypc);
+    mycode <= ram(conv_integer(mypc));
   end process;
 
   ------------
@@ -92,10 +98,14 @@ begin
     case myopcode(3 downto 2) is
       when "00" =>
         myALUcode <= myopcode(1 downto 0);
-        myALUarg0 <= regfile(conv_integer(myoperand1));
-        myALUarg1 <= regfile(conv_integer(myoperand2));
-        myALUival <= (x"0000" when myoperand3(15) = '0' else x"1111") & myoperand3;
-        myALUretx <= myoperand0;
+        myALUarg0 <= myregfile(conv_integer(myoperand1));
+        myALUarg1 <= myregfile(conv_integer(myoperand2));
+        if myoperand3(15) = '0' then
+          myALUival <= x"0000" & myoperand3;
+        else
+          myALUival <= x"1111" & myoperand3;
+        end if;
+        mydestx <= myoperand0;
       when others =>
         assert false;
     end case;
@@ -109,7 +119,7 @@ begin
   process(clk)
   begin
     if rising_edge(clk) then
-      myretx <= myALUretx;
+      myretx <= mydestx;
       myretv <= myALUretv;
     end if;
   end process;
@@ -117,7 +127,7 @@ begin
   -- body
   process(myretv)
   begin
-    regfile(conv_integer(myretx)) <= myretv;
+    myregfile(conv_integer(myretx)) <= myretv;
   end process;
 
 end Behavioral;
