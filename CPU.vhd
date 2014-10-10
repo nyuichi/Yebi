@@ -15,7 +15,6 @@ architecture Behavioral of CPU is
 
   component ALU is
     port (
-      clk : in std_logic;
       code : in std_logic_vector(1 downto 0);
       arg0 : in std_logic_vector(31 downto 0);
       arg1 : in std_logic_vector(31 downto 0);
@@ -23,10 +22,20 @@ architecture Behavioral of CPU is
       retv : out std_logic_vector(31 downto 0));
   end component;
 
-  signal myregfile : regfile_t := (others => (others => '0'));
+  component Decode is
+    port (
+      code : in std_logic_vector(31 downto 0);
+      opcode : out std_logic_vector(3 downto 0);
+      operand0 : out std_logic_vector(3 downto 0);
+      operand1 : out std_logic_vector(3 downto 0);
+      operand2 : out std_logic_vector(3 downto 0);
+      operand3 : out std_logic_vector(15 downto 0));
+  end component;
+
+  signal mypc, my_pc : std_logic_vector(31 downto 0) := (others => '0');
+  signal myregfile, my_regfile : regfile_t := (others => (others => '0'));
 
   -- Fetch
-  signal mypc, my_pc : std_logic_vector(31 downto 0) := (others => '0');
   signal mycode : std_logic_vector(31 downto 0) := (others => '0');
 
   -- Decode
@@ -35,15 +44,14 @@ architecture Behavioral of CPU is
   signal myoperand1 : std_logic_vector(3 downto 0) := (others => '0');
   signal myoperand2 : std_logic_vector(3 downto 0) := (others => '0');
   signal myoperand3 : std_logic_vector(15 downto 0) := (others => '0');
-  signal myALUcode : std_logic_vector(1 downto 0) := (others => '0');
-  signal myALUarg0 : std_logic_vector(31 downto 0) := (others => '0');
-  signal myALUarg1 : std_logic_vector(31 downto 0) := (others => '0');
-  signal myALUival : std_logic_vector(31 downto 0) := (others => '0');
-  signal myALUretv : std_logic_vector(31 downto 0) := (others => '0');
-  signal myALUretx : std_logic_vector(3 downto 0) := (others => '0');
+
+  -- Read
+  signal myarg0 : std_logic_vector(31 downto 0) := (others => '0');
+  signal myarg1 : std_logic_vector(31 downto 0) := (others => '0');
+  signal myarg2 : std_logic_vector(31 downto 0) := (others => '0');
 
   -- Execute
-  signal mydestx : std_logic_vector(3 downto 0) := (others => '0');
+  signal myALUcode : std_logic_vector(1 downto 0) := (others => '0');
 
   -- Write
   signal myretx : std_logic_vector(3 downto 0) := (others => '0');
@@ -52,96 +60,88 @@ architecture Behavioral of CPU is
 begin
 
   myALU : ALU port map (
-    clk => clk,
     code => myALUcode,
-    arg0 => myALUarg0,
-    arg1 => myALUarg1,
-    ival => myALUival,
-    retv => myALUretv);
+    arg0 => myarg0,
+    arg1 => myarg1,
+    ival => myarg2,
+    retv => myretv);
+
+  myDecode : Decode port map (
+    code => mycode,
+    opcode => myopcode,
+    operand0 => myoperand0,
+    operand1 => myoperand1,
+    operand2 => myoperand2,
+    operand3 => myoperand3);
+
+  sequential: process(clk)
+  begin
+    if rising_edge(clk) then
+      mypc <= my_pc;
+      myregfile <= my_regfile;
+    end if;
+  end process;
 
   -----------
   -- Fetch --
   -----------
 
-  -- latch
-  process(clk)
+  process(mypc, ram)
   begin
-    if rising_edge(clk) then
-      mypc <= my_pc;
-    end if;
-  end process;
-
-  -- body
-  process(mypc)
-  begin
-    my_pc <= mypc + 1;
     mycode <= ram(conv_integer(mypc));
-    myregfile(15) <= mypc;
+    my_pc <= mypc + 1;
   end process;
 
-  ------------
-  -- Decode --
-  ------------
+  ----------
+  -- Read --
+  ----------
 
-  -- latch
-  process(clk)
+  process(myregfile, myoperand1, myoperand2, myoperand3)
   begin
-    if rising_edge(clk) then
-      myopcode <= mycode(31 downto 28);
-      myoperand0 <= mycode(27 downto 24);
-      myoperand1 <= mycode(23 downto 20);
-      myoperand2 <= mycode(19 downto 16);
-      myoperand3 <= mycode(15 downto 0);
+    if myoperand1 = 15 then
+      myarg0 <= x"00000000";
+    else
+      myarg0 <= myregfile(conv_integer(myoperand1));
     end if;
-  end process;
 
-  -- body
-  process(myopcode, myoperand0, myoperand1, myoperand2, myoperand3)
-  begin
-    case myopcode(3 downto 2) is
-      when "00" =>
-        myALUcode <= myopcode(1 downto 0);
-        myALUarg0 <= myregfile(conv_integer(myoperand1));
-        myALUarg1 <= myregfile(conv_integer(myoperand2));
-        if myoperand3(15) = '0' then
-          myALUival <= x"0000" & myoperand3;
-        else
-          myALUival <= x"1111" & myoperand3;
-        end if;
-        myALUretx <= myoperand0;
-      when others =>
-        assert false report "unsuppoted instruction";
-    end case;
+    if myoperand2 = 15 then
+      myarg1 <= x"00000000";
+    else
+      myarg1 <= myregfile(conv_integer(myoperand2));
+    end if;
+
+    if myoperand3(15) = '0' then
+      myarg2 <= x"0000" & myoperand3;
+    else
+      myarg2 <= x"1111" & myoperand3;
+    end if;
   end process;
 
   -------------
   -- Execute --
   -------------
 
-  process(clk)
+  process(myopcode, myoperand0)
   begin
-    if rising_edge(clk) then
-      mydestx <= myALUretx;
-    end if;
+    case myopcode(3 downto 2) is
+      when "00" =>
+        myALUcode <= myopcode(1 downto 0);
+        myretx <= myoperand0;
+      when others =>
+        myALUcode <= (others => '0');
+        myretx <= (others => '0');
+    end case;
   end process;
 
   -----------
   -- Write --
   -----------
 
-  -- latch
-  process(clk)
-  begin
-    if rising_edge(clk) then
-      myretx <= mydestx;
-      myretv <= myALUretv;
-    end if;
-  end process;
-
-  -- body
   process(myretx, myretv)
   begin
-    myregfile(conv_integer(myretx)) <= myretv;
+    if myretx /= 15 then
+      my_regfile(conv_integer(myretx)) <= myretv;
+    end if;
   end process;
 
 end Behavioral;
