@@ -8,7 +8,7 @@ use work.Util.all;
 entity CPU is
   port (
     clk : in std_logic;
-    ram : inout ram_t);
+    ram : in ram_t);
 end CPU;
 
 architecture Behavioral of CPU is
@@ -26,27 +26,28 @@ architecture Behavioral of CPU is
   signal myregfile : regfile_t := (others => (others => '0'));
 
   -- Fetch
-  signal mypc : std_logic_vector(31 downto 0);
-  signal mycode : std_logic_vector(31 downto 0);
+  signal mypc, my_pc : std_logic_vector(31 downto 0) := (others => '0');
+  signal mycode : std_logic_vector(31 downto 0) := (others => '0');
 
   -- Decode
-  signal myopcode : std_logic_vector(3 downto 0);
-  signal myoperand0 : std_logic_vector(3 downto 0);
-  signal myoperand1 : std_logic_vector(3 downto 0);
-  signal myoperand2 : std_logic_vector(3 downto 0);
-  signal myoperand3 : std_logic_vector(15 downto 0);
+  signal myopcode : std_logic_vector(3 downto 0) := (others => '0');
+  signal myoperand0 : std_logic_vector(3 downto 0) := (others => '0');
+  signal myoperand1 : std_logic_vector(3 downto 0) := (others => '0');
+  signal myoperand2 : std_logic_vector(3 downto 0) := (others => '0');
+  signal myoperand3 : std_logic_vector(15 downto 0) := (others => '0');
+  signal myALUcode : std_logic_vector(1 downto 0) := (others => '0');
+  signal myALUarg0 : std_logic_vector(31 downto 0) := (others => '0');
+  signal myALUarg1 : std_logic_vector(31 downto 0) := (others => '0');
+  signal myALUival : std_logic_vector(31 downto 0) := (others => '0');
+  signal myALUretv : std_logic_vector(31 downto 0) := (others => '0');
+  signal myALUretx : std_logic_vector(3 downto 0) := (others => '0');
 
   -- Execute
-  signal myALUcode : std_logic_vector(1 downto 0);
-  signal myALUarg0 : std_logic_vector(31 downto 0);
-  signal myALUarg1 : std_logic_vector(31 downto 0);
-  signal myALUival : std_logic_vector(31 downto 0);
-  signal myALUretv : std_logic_vector(31 downto 0);
-  signal mydestx : std_logic_vector(3 downto 0);
+  signal mydestx : std_logic_vector(3 downto 0) := (others => '0');
 
   -- Write
-  signal myretx : std_logic_vector(3 downto 0);
-  signal myretv : std_logic_vector(31 downto 0);
+  signal myretx : std_logic_vector(3 downto 0) := (others => '0');
+  signal myretv : std_logic_vector(31 downto 0) := (others => '0');
 
 begin
 
@@ -66,14 +67,16 @@ begin
   process(clk)
   begin
     if rising_edge(clk) then
-      mypc <= myregfile(15);
+      mypc <= my_pc;
     end if;
   end process;
 
   -- body
   process(mypc)
   begin
+    my_pc <= mypc + 1;
     mycode <= ram(conv_integer(mypc));
+    myregfile(15) <= mypc;
   end process;
 
   ------------
@@ -105,10 +108,21 @@ begin
         else
           myALUival <= x"1111" & myoperand3;
         end if;
-        mydestx <= myoperand0;
+        myALUretx <= myoperand0;
       when others =>
-        assert false;
+        assert false report "unsuppoted instruction";
     end case;
+  end process;
+
+  -------------
+  -- Execute --
+  -------------
+
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      mydestx <= myALUretx;
+    end if;
   end process;
 
   -----------
@@ -125,7 +139,7 @@ begin
   end process;
 
   -- body
-  process(myretv)
+  process(myretx, myretv)
   begin
     myregfile(conv_integer(myretx)) <= myretv;
   end process;
