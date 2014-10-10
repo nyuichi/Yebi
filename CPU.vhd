@@ -158,10 +158,10 @@ begin
   process(clk)
   begin
     if tx_busy = '1' then
-      tx_go = '0';
+      tx_go <= '0';
     else
-      tx_go = '1';
-      tx_data = myregfile(4)(7 downto 0);
+      tx_go <= '1';
+      tx_data <= myregfile(4)(7 downto 0);
     end if;
   end process;
 
