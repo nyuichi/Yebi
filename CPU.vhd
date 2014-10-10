@@ -8,7 +8,10 @@ use work.Util.all;
 entity CPU is
   port (
     clk : in std_logic;
-    ram : in ram_t);
+    ram : in ram_t;
+    tx_go : out std_logic;
+    tx_busy : in std_logic;
+    tx_data : out std_logic_vector(7 downto 0));
 end CPU;
 
 architecture Behavioral of CPU is
@@ -89,7 +92,11 @@ begin
   process(mypc, ram)
   begin
     mycode <= ram(conv_integer(mypc));
-    my_pc <= mypc + 1;
+    if mypc /= x"0000000f" then
+      my_pc <= mypc + 1;
+    else
+      my_pc <= x"0000000f";             -- for debug purpose. FIXME
+    end if;
   end process;
 
   ----------
@@ -141,6 +148,20 @@ begin
   begin
     if myretx /= 15 then
       my_regfile(conv_integer(myretx)) <= myretv;
+    end if;
+  end process;
+
+  -----------
+  -- Debug --
+  -----------
+
+  process(clk)
+  begin
+    if tx_busy = '1' then
+      tx_go = '0';
+    else
+      tx_go = '1';
+      tx_data = myregfile(4)(7 downto 0);
     end if;
   end process;
 
