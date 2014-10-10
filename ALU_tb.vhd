@@ -11,7 +11,6 @@ architecture Behavioral of ALU_tb is
 
   component ALU is
     port (
-      clk : in std_logic;
       code : in std_logic_vector(1 downto 0);
       arg0 : in std_logic_vector(31 downto 0);
       arg1 : in std_logic_vector(31 downto 0);
@@ -30,7 +29,6 @@ architecture Behavioral of ALU_tb is
 begin
 
   myALU : ALU port map (
-    clk => clk_gen,
     code => mycode,
     arg0 => myarg0,
     arg1 => myarg1,
