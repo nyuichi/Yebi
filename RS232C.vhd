@@ -1,50 +1,50 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
-use IEEE.std_logic_unsigned.all;
 
 entity RS232C is
   port (
     clk : in std_logic;
     tx_pin : out std_logic;
-    go : in std_logic;
-    busy : out std_logic;
-    data : in std_logic_vector(7 downto 0));
+    rx_pin : in std_logic;
+    tx_go : in std_logic;
+    tx_busy : out std_logic;
+    tx_data : in std_logic_vector(7 downto 0);
+    rx_busy : out std_logic;
+    rx_data : out std_logic_vector(7 downto 0));
 end RS232C;
 
 architecture Behavioral of RS232C is
 
-  constant wtime : std_logic_vector(15 downto 0) := x"1ADB";
+  component Tx is
+    port (
+      clk : in std_logic;
+      tx_pin : out std_logic;
+      go : in std_logic;
+      busy : out std_logic;
+      data : in std_logic_vector(7 downto 0));
+  end component;
 
-  signal buf : std_logic_vector(8 downto 0) := (others => '1');
-  signal count : std_logic_vector(15 downto 0) := wtime;
-  signal state : integer range -1 to 9 := -1;
+  component Rx is
+    port (
+      clk : in std_logic;
+      rx_pin : in std_logic;
+      data : out std_logic_vector(7 downto 0);
+      busy : out std_logic);
+  end component;
 
 begin
 
-  busy <= '1' when state /= -1 else '0';
+  myTx : Tx port map (
+    clk => clk,
+    tx_pin => tx_pin,
+    go => tx_go,
+    busy => tx_busy,
+    data => tx_data);
 
-  process(clk)
-  begin
-    if rising_edge(clk) then
-      case state is
-        when -1 =>
-          if go = '1' then
-            buf <= data & "0";
-            count <= wtime;
-            state <= 9;
-          end if;
-        when others =>
-          if count = 0 then
-            buf <= "1" & buf(8 downto 1);
-            count <= wtime;
-            state <= state - 1;
-          else
-            count <= count - 1;
-          end if;
-      end case;
-    end if;
-  end process;
-
-  tx_pin <= buf(0);
+  myRx : Rx port map (
+    clk => clk,
+    rx_pin => rx_pin,
+    data => rx_data,
+    busy => rx_busy);
 
 end Behavioral;

@@ -9,7 +9,8 @@ use work.Util.all;
 entity Top is
   port (
     MCLK1 : in std_logic;
-    RS_TX : out std_logic);
+    RS_TX : out std_logic;
+    RS_RX : in std_logic);
 end Top;
 
 architecture Behavioral of Top is
@@ -27,9 +28,12 @@ architecture Behavioral of Top is
     port (
       clk : in std_logic;
       tx_pin : out std_logic;
-      go : in std_logic;
-      busy : out std_logic;
-      data : in std_logic_vector(7 downto 0));
+      rx_pin : in std_logic;
+      tx_go : in std_logic;
+      tx_busy : out std_logic;
+      tx_data : in std_logic_vector(7 downto 0);
+      rx_busy : out std_logic;
+      rx_data : out std_logic_vector(7 downto 0));
   end component;
 
   signal iclk, clk : std_logic := '0';
@@ -70,6 +74,8 @@ architecture Behavioral of Top is
   signal tx_go : std_logic;
   signal tx_busy : std_logic;
   signal tx_data : std_logic_vector(7 downto 0);
+  signal rx_busy : std_logic;
+  signal rx_data : std_logic_vector(7 downto 0);
 
 begin
 
@@ -91,8 +97,11 @@ begin
   myRS232C : RS232C port map (
     clk => clk,
     tx_pin => RS_TX,
-    go => tx_go,
-    busy => tx_busy,
-    data => tx_data);
+    rx_pin => RS_RX,
+    tx_go => tx_go,
+    tx_busy => tx_busy,
+    tx_data => tx_data,
+    rx_busy => rx_busy,
+    rx_data => rx_data);
 
 end Behavioral;
