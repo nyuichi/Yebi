@@ -156,7 +156,7 @@ begin
   process(mypc, myopcode, myarg0, myarg1, myarg2, myarg3)
   begin
     case myopcode(3 downto 1) is
-      when "111" =>
+      when "110" =>
         if myopcode(0) = '0' then
           if myarg0 = myarg1 then
             my_pc <= myarg2 + myarg3;
