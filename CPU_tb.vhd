@@ -13,7 +13,10 @@ architecture Behavioral of CPU_tb is
   component CPU is
     port (
       clk : in std_logic;
-      ram : in ram_t);
+      ram : in ram_t;
+      tx_go : out std_logic;
+      tx_busy : in std_logic;
+      tx_data : out std_logic_vector(7 downto 0));
   end component;
 
   signal myram : ram_t := (
@@ -51,11 +54,17 @@ architecture Behavioral of CPU_tb is
 
   signal clk_gen : std_logic := '0';
 
+  signal tx_go, tx_busy : std_logic;
+  signal tx_data : std_logic_vector(7 downto 0);
+
 begin
 
   myCPU : CPU port map (
     clk => clk_gen,
-    ram => myram);
+    ram => myram,
+    tx_go => tx_go,
+    tx_busy => tx_busy,
+    tx_data => tx_data);
 
   -- clock generator
   process
