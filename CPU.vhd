@@ -52,8 +52,12 @@ architecture Behavioral of CPU is
   signal myarg0 : std_logic_vector(31 downto 0) := (others => '0');
   signal myarg1 : std_logic_vector(31 downto 0) := (others => '0');
   signal myarg2 : std_logic_vector(31 downto 0) := (others => '0');
+  signal myarg3 : std_logic_vector(31 downto 0) := (others => '0');
 
   -- Execute
+  signal myALUarg1 : std_logic_vector(31 downto 0) := (others => '0');
+  signal myALUarg2 : std_logic_vector(31 downto 0) := (others => '0');
+  signal myALUarg3 : std_logic_vector(31 downto 0) := (others => '0');
   signal myALUcode : std_logic_vector(1 downto 0) := (others => '0');
 
   -- Write
@@ -64,9 +68,9 @@ begin
 
   myALU : ALU port map (
     code => myALUcode,
-    arg0 => myarg0,
-    arg1 => myarg1,
-    ival => myarg2,
+    arg0 => myALUarg1,
+    arg1 => myALUarg2,
+    ival => myALUarg3,
     retv => myretv);
 
   myDecode : Decode port map (
@@ -92,35 +96,36 @@ begin
   process(mypc, ram)
   begin
     mycode <= ram(conv_integer(mypc));
-    if mypc /= x"0000000f" then
-      my_pc <= mypc + 1;
-    else
-      my_pc <= x"0000000f";             -- for debug purpose. FIXME
-    end if;
   end process;
 
   ----------
   -- Read --
   ----------
 
-  process(myregfile, myoperand1, myoperand2, myoperand3)
+  process(myregfile, mypc, myoperand0, myoperand1, myoperand2, myoperand3)
   begin
-    if myoperand1 = 15 then
-      myarg0 <= x"00000000";
+    if myoperand0 = 15 then
+      myarg0 <= mypc;
     else
-      myarg0 <= myregfile(conv_integer(myoperand1));
+      myarg0 <= myregfile(conv_integer(myoperand0));
+    end if;
+
+    if myoperand1 = 15 then
+      myarg1 <= mypc;
+    else
+      myarg1 <= myregfile(conv_integer(myoperand1));
     end if;
 
     if myoperand2 = 15 then
-      myarg1 <= x"00000000";
+      myarg2 <= mypc;
     else
-      myarg1 <= myregfile(conv_integer(myoperand2));
+      myarg2 <= myregfile(conv_integer(myoperand2));
     end if;
 
     if myoperand3(15) = '0' then
-      myarg2 <= x"0000" & myoperand3;
+      myarg3 <= x"0000" & myoperand3;
     else
-      myarg2 <= x"1111" & myoperand3;
+      myarg3 <= x"1111" & myoperand3;
     end if;
   end process;
 
@@ -128,15 +133,45 @@ begin
   -- Execute --
   -------------
 
-  process(myopcode, myoperand0)
+  -- ALU
+  process(myopcode, myoperand0, myarg1, myarg2, myarg3)
   begin
     case myopcode(3 downto 2) is
       when "00" =>
         myALUcode <= myopcode(1 downto 0);
+        myALUarg1 <= myarg1;
+        myALUarg2 <= myarg2;
+        myALUarg3 <= myarg3;
         myretx <= myoperand0;
       when others =>
         myALUcode <= (others => '0');
+        myALUarg1 <= (others => '0');
+        myALUarg2 <= (others => '0');
+        myALUarg3 <= (others => '0');
         myretx <= (others => '0');
+    end case;
+  end process;
+
+  -- Branch
+  process(mypc, myopcode, myarg0, myarg1, myarg2, myarg3)
+  begin
+    case myopcode(3 downto 1) is
+      when "111" =>
+        if myopcode(0) = '0' then
+          if myarg0 = myarg1 then
+            my_pc <= myarg2 + myarg3;
+          else
+            my_pc <= mypc + 1;
+          end if;
+        else
+          if myarg0 <= myarg1 then
+            my_pc <= myarg2 + myarg3;
+          else
+            my_pc <= mypc + 1;
+          end if;
+        end if;
+      when others =>
+        my_pc <= mypc + 1;
     end case;
   end process;
 
