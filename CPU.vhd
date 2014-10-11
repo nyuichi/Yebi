@@ -35,10 +35,10 @@ architecture Behavioral of CPU is
       operand3 : out std_logic_vector(15 downto 0));
   end component;
 
-  signal mypc, my_pc : std_logic_vector(31 downto 0) := (others => '0');
   signal myregfile, my_regfile : regfile_t := (others => (others => '0'));
 
   -- Fetch
+  signal mypc : std_logic_vector(31 downto 0) := (others => '0');
   signal mycode : std_logic_vector(31 downto 0) := (others => '0');
 
   -- Decode
@@ -59,6 +59,7 @@ architecture Behavioral of CPU is
   signal myALUarg2 : std_logic_vector(31 downto 0) := (others => '0');
   signal myALUarg3 : std_logic_vector(31 downto 0) := (others => '0');
   signal myALUcode : std_logic_vector(1 downto 0) := (others => '0');
+  signal mynextpc : std_logic_vector(31 downto 0) := (others => '0');
 
   -- Write
   signal myretx : std_logic_vector(3 downto 0) := (others => '0');
@@ -84,7 +85,6 @@ begin
   sequential: process(clk)
   begin
     if rising_edge(clk) then
-      mypc <= my_pc;
       myregfile <= my_regfile;
     end if;
   end process;
@@ -93,34 +93,21 @@ begin
   -- Fetch --
   -----------
 
-  process(mypc, ram)
+  process(myregfile, ram)
   begin
-    mycode <= ram(conv_integer(mypc));
+    mypc <= myregfile(15);
+    mycode <= ram(conv_integer(myregfile(15)));
   end process;
 
   ----------
   -- Read --
   ----------
 
-  process(myregfile, mypc, myoperand0, myoperand1, myoperand2, myoperand3)
+  process(myregfile, myoperand0, myoperand1, myoperand2, myoperand3)
   begin
-    if myoperand0 = 15 then
-      myarg0 <= mypc;
-    else
-      myarg0 <= myregfile(conv_integer(myoperand0));
-    end if;
-
-    if myoperand1 = 15 then
-      myarg1 <= mypc;
-    else
-      myarg1 <= myregfile(conv_integer(myoperand1));
-    end if;
-
-    if myoperand2 = 15 then
-      myarg2 <= mypc;
-    else
-      myarg2 <= myregfile(conv_integer(myoperand2));
-    end if;
+    myarg0 <= myregfile(conv_integer(myoperand0));
+    myarg1 <= myregfile(conv_integer(myoperand1));
+    myarg2 <= myregfile(conv_integer(myoperand2));
 
     if myoperand3(15) = '0' then
       myarg3 <= x"0000" & myoperand3;
@@ -159,19 +146,19 @@ begin
       when "110" =>
         if myopcode(0) = '0' then
           if myarg0 = myarg1 then
-            my_pc <= myarg2 + myarg3;
+            mynextpc <= myarg2 + myarg3;
           else
-            my_pc <= mypc + 1;
+            mynextpc <= mypc + 1;
           end if;
         else
           if myarg0 <= myarg1 then
-            my_pc <= myarg2 + myarg3;
+            mynextpc <= myarg2 + myarg3;
           else
-            my_pc <= mypc + 1;
+            mynextpc <= mypc + 1;
           end if;
         end if;
       when others =>
-        my_pc <= mypc + 1;
+        mynextpc <= mypc + 1;
     end case;
   end process;
 
@@ -179,11 +166,16 @@ begin
   -- Write --
   -----------
 
-  process(myretx, myretv)
+  process(myregfile, myretx, myretv, mynextpc)
   begin
-    if myretx /= 15 then
-      my_regfile(conv_integer(myretx)) <= myretv;
-    end if;
+    for i in 0 to 14 loop
+      if myretx = i then
+        my_regfile(i) <= myretv;
+      else
+        my_regfile(i) <= myregfile(i);
+      end if;
+    end loop;
+    my_regfile(15) <= mynextpc;
   end process;
 
   -----------
