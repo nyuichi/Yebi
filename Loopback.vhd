@@ -16,8 +16,8 @@ architecture Behavioral of Loopback is
 
   signal iclk, clk : std_logic := '0';
 
-  signal DOUT : std_logic_vector(7 downto 0);
-  signal DIN : std_logic_vector(7 downto 0);
+  signal DOUT : std_logic_vector(7 downto 0) := (others => '0');
+  signal DIN : std_logic_vector(7 downto 0) := (others => '0');
   signal Tx_GO : std_logic := '0';
   signal Rx_BUSY : std_logic;
   signal Tx_BUSY : std_logic;
@@ -51,8 +51,8 @@ begin
     CLK => CLK,
     rx_pin => RS_RX,
     tx_pin => RS_TX,
-    tx_data => DOUT,
-    rx_data => DIN,
+    tx_data => DIN,
+    rx_data => DOUT,
     tx_go => Tx_GO,
     Rx_BUSY => Rx_BUSY,
     Tx_BUSY => Tx_BUSY);

@@ -37,9 +37,8 @@ begin
           end if;
         when 0 =>
           if count = "0" & wtime(15 downto 1) then
-            count <= "0" & wtime(15 downto 1);
+            count <= count - 1;
             state <= -1;
-            data <= buf(7 downto 0);    -- flush
           else
             count <= count - 1;
           end if;
@@ -54,5 +53,7 @@ begin
       end case;
     end if;
   end process;
+
+  data <= buf(7 downto 0);
 
 end Behavioral;
