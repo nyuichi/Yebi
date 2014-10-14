@@ -21,7 +21,10 @@ architecture Behavioral of Top is
       ram : in ram_t;
       tx_go : out std_logic;
       tx_busy : in std_logic;
-      tx_data : out std_logic_vector(7 downto 0));
+      tx_data : out std_logic_vector(7 downto 0);
+      rx_invalid : out std_logic;
+      rx_ready : in std_logic;
+      rx_data : in std_logic_vector(7 downto 0));
   end component;
 
   component RS232C is
@@ -32,7 +35,8 @@ architecture Behavioral of Top is
       tx_go : in std_logic;
       tx_busy : out std_logic;
       tx_data : in std_logic_vector(7 downto 0);
-      rx_busy : out std_logic;
+      rx_invalid : in std_logic;
+      rx_ready : out std_logic;
       rx_data : out std_logic_vector(7 downto 0));
   end component;
 
@@ -40,9 +44,12 @@ architecture Behavioral of Top is
 
   signal myram : ram_t := (
     x"00000000",
-    x"01000001",
-    x"02100000",
-    x"03210000",
+    x"A1000000",
+    x"B0100000",
+    x"C0000001",
+    --x"01000001",
+    --x"02100000",
+    --x"03210000",
     x"0430000A",
     x"11420000",
     x"22300003",
@@ -74,7 +81,8 @@ architecture Behavioral of Top is
   signal tx_go : std_logic;
   signal tx_busy : std_logic;
   signal tx_data : std_logic_vector(7 downto 0);
-  signal rx_busy : std_logic;
+  signal rx_invalid : std_logic;
+  signal rx_ready : std_logic;
   signal rx_data : std_logic_vector(7 downto 0);
 
 begin
@@ -92,7 +100,10 @@ begin
     ram => myram,
     tx_go => tx_go,
     tx_busy => tx_busy,
-    tx_data => tx_data);
+    tx_data => tx_data,
+    rx_invalid => rx_invalid,
+    rx_ready => rx_ready,
+    rx_data => rx_data);
 
   myRS232C : RS232C port map (
     clk => clk,
@@ -101,7 +112,8 @@ begin
     tx_go => tx_go,
     tx_busy => tx_busy,
     tx_data => tx_data,
-    rx_busy => rx_busy,
+    rx_invalid => rx_invalid,
+    rx_ready => rx_ready,
     rx_data => rx_data);
 
 end Behavioral;

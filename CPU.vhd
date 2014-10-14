@@ -11,7 +11,10 @@ entity CPU is
     ram : in ram_t;
     tx_go : out std_logic;
     tx_busy : in std_logic;
-    tx_data : out std_logic_vector(7 downto 0));
+    tx_data : out std_logic_vector(7 downto 0);
+    rx_invalid : out std_logic;
+    rx_ready : in std_logic;
+    rx_data : in std_logic_vector(7 downto 0));
 end CPU;
 
 architecture Behavioral of CPU is
@@ -36,6 +39,7 @@ architecture Behavioral of CPU is
   end component;
 
   signal myregfile, my_regfile : regfile_t := (others => (others => '0'));
+  signal mystopbit, my_stopbit : std_logic := '0';
 
   -- Fetch
   signal mypc : std_logic_vector(31 downto 0) := (others => '0');
@@ -59,6 +63,10 @@ architecture Behavioral of CPU is
   signal myALUarg2 : std_logic_vector(31 downto 0) := (others => '0');
   signal myALUarg3 : std_logic_vector(31 downto 0) := (others => '0');
   signal myALUcode : std_logic_vector(1 downto 0) := (others => '0');
+  signal myALUretx : std_logic_vector(3 downto 0) := (others => '0');
+  signal myALUretv : std_logic_vector(31 downto 0) := (others => '0');
+  signal myIOretx : std_logic_vector(3 downto 0) := (others => '0');
+  signal myIOretv : std_logic_vector(31 downto 0) := (others => '0');
   signal mynextpc : std_logic_vector(31 downto 0) := (others => '0');
 
   -- Write
@@ -72,7 +80,7 @@ begin
     arg0 => myALUarg1,
     arg1 => myALUarg2,
     ival => myALUarg3,
-    retv => myretv);
+    retv => myALUretv);
 
   myDecode : Decode port map (
     code => mycode,
@@ -86,6 +94,7 @@ begin
   begin
     if rising_edge(clk) then
       myregfile <= my_regfile;
+      mystopbit <= my_stopbit;
     end if;
   end process;
 
@@ -129,18 +138,18 @@ begin
         myALUarg1 <= myarg1;
         myALUarg2 <= myarg2;
         myALUarg3 <= myarg3;
-        myretx <= myoperand0;
+        myALUretx <= myoperand0;
       when others =>
         myALUcode <= (others => '0');
         myALUarg1 <= (others => '0');
         myALUarg2 <= (others => '0');
         myALUarg3 <= (others => '0');
-        myretx <= (others => '0');
+        myALUretx <= (others => '0');
     end case;
   end process;
 
   -- Branch
-  process(mypc, myopcode, myarg0, myarg1, myarg2, myarg3)
+  process(mypc, myopcode, myarg0, myarg1, myarg2, myarg3, mystopbit)
   begin
     case myopcode(3 downto 1) is
       when "110" =>
@@ -157,14 +166,77 @@ begin
             mynextpc <= mypc + 1;
           end if;
         end if;
+      when "101" =>
+        if mystopbit = '0' then
+          mynextpc <= mypc + 1;
+        else
+          mynextpc <= mypc;             -- invoke busy loop for IO instructions
+        end if;
       when others =>
         mynextpc <= mypc + 1;
+    end case;
+  end process;
+
+  -- IO
+  process(myopcode, myoperand0, myarg1, mystopbit)
+  begin
+    myIOretx <= (others => '0');
+    myIOretv <= (others => '0');
+    rx_invalid <= '0';
+    tx_go <= '0';
+    case myopcode(3 downto 1) is
+      when "101" =>
+        if myopcode(0) = '0' then       -- READ
+          if rx_ready = '0' then
+            my_stopbit <= '1';
+          else
+            rx_invalid <= '1';
+            myIOretx <= myoperand0;
+            myIOretv <= x"000000" & rx_data;
+            my_stopbit <= '0';
+          end if;
+        else                            -- WRITE
+          if tx_busy = '0' then
+            if mystopbit = '0' then
+              tx_go <= '1';
+              tx_data <= myarg1(7 downto 0);
+              my_stopbit <= '1';
+            else
+              my_stopbit <= '0';
+            end if;
+          else
+            my_stopbit <= '1';
+          end if;
+        end if;
+      when others =>
+        my_stopbit <= '0';
     end case;
   end process;
 
   -----------
   -- Write --
   -----------
+
+  process(myopcode, myALUretx, myALUretv, myIOretx, myIOretv)
+  begin
+    case myopcode(3 downto 2) is
+      when "00" =>
+        myretx <= myALUretx;
+        myretv <= myALUretv;
+      when "10" =>
+        case myopcode(1 downto 0) is
+          when "10" =>
+            myretx <= myIOretx;
+            myretv <= myIOretv;
+          when others =>
+            myretx <= (others => '0');
+            myretv <= (others => '0');
+        end case;
+      when others =>
+        myretx <= (others => '0');
+        myretv <= (others => '0');
+    end case;
+  end process;
 
   process(myregfile, myretx, myretv, mynextpc)
   begin
