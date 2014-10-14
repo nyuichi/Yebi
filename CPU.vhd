@@ -82,7 +82,7 @@ begin
     operand2 => myoperand2,
     operand3 => myoperand3);
 
-  sequential: process(clk)
+  process(clk)
   begin
     if rising_edge(clk) then
       myregfile <= my_regfile;
