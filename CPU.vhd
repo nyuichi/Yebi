@@ -168,7 +168,9 @@ begin
 
   process(myregfile, myretx, myretv, mynextpc)
   begin
-    for i in 0 to 14 loop
+    my_regfile(0) <= (others => '0');
+
+    for i in 1 to 14 loop
       if myretx = i then
         my_regfile(i) <= myretv;
       else
