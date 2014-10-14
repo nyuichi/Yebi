@@ -69,6 +69,8 @@ begin
     wait for BR; RXD <= '1';
     wait for BR; RXD <= '1'; -- stop-bit
 
+    wait for (16 * BR);
+
     assert false report "Simulation End." severity failure;
   end process;
 

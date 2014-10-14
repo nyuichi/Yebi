@@ -6,8 +6,9 @@ entity Rx is
   port (
     clk : in std_logic;
     rx_pin : in std_logic;
+    invalid : in std_logic;
     data : out std_logic_vector(7 downto 0);
-    busy : out std_logic);
+    ready : out std_logic);
 end Rx;
 
 architecture Behavioral of Rx is
@@ -20,7 +21,16 @@ architecture Behavioral of Rx is
 
 begin
 
-  busy <= '1' when state /= -1 else '0';
+  process(state, invalid)
+  begin
+    if state'event and state = -1 then
+      ready <= '1';
+    else
+      if invalid = '1' then
+        ready <= '0';
+      end if;
+    end if;
+  end process;
 
   process(clk)
   begin

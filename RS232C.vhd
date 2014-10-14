@@ -9,7 +9,8 @@ entity RS232C is
     tx_go : in std_logic;
     tx_busy : out std_logic;
     tx_data : in std_logic_vector(7 downto 0);
-    rx_busy : out std_logic;
+    rx_invalid : in std_logic;
+    rx_ready : out std_logic;
     rx_data : out std_logic_vector(7 downto 0));
 end RS232C;
 
@@ -28,8 +29,9 @@ architecture Behavioral of RS232C is
     port (
       clk : in std_logic;
       rx_pin : in std_logic;
+      invalid : in std_logic;
       data : out std_logic_vector(7 downto 0);
-      busy : out std_logic);
+      ready : out std_logic);
   end component;
 
 begin
@@ -44,7 +46,8 @@ begin
   myRx : Rx port map (
     clk => clk,
     rx_pin => rx_pin,
+    invalid => rx_invalid,
     data => rx_data,
-    busy => rx_busy);
+    ready => rx_ready);
 
 end Behavioral;

@@ -18,9 +18,10 @@ architecture Behavioral of Loopback is
 
   signal DOUT : std_logic_vector(7 downto 0) := (others => '0');
   signal DIN : std_logic_vector(7 downto 0) := (others => '0');
-  signal Tx_GO : std_logic := '0';
-  signal Rx_BUSY : std_logic;
-  signal Tx_BUSY : std_logic;
+  signal tx_go : std_logic := '0';
+  signal tx_busy : std_logic;
+  signal rx_invalid : std_logic;
+  signal rx_ready : std_logic;
 
   component RS232C is
     port (
@@ -30,11 +31,11 @@ architecture Behavioral of Loopback is
       tx_go : in std_logic;
       tx_busy : out std_logic;
       tx_data : in std_logic_vector(7 downto 0);
-      rx_busy : out std_logic;
+      rx_invalid : in std_logic;
+      rx_ready : out std_logic;
       rx_data : out std_logic_vector(7 downto 0));
   end component;
 
-  signal prev_busy : std_logic := '0';
   signal data_ready : std_logic := '0';
 
 begin
@@ -51,33 +52,32 @@ begin
     CLK => CLK,
     rx_pin => RS_RX,
     tx_pin => RS_TX,
+    tx_go => tx_go,
+    tx_busy => tx_busy,
     tx_data => DIN,
-    rx_data => DOUT,
-    tx_go => Tx_GO,
-    Rx_BUSY => Rx_BUSY,
-    Tx_BUSY => Tx_BUSY);
+    rx_invalid => rx_invalid,
+    rx_ready => rx_ready,
+    rx_data => DOUT);
 
   process(clk)
   begin
     if rising_edge(clk) then
       -- read
-      if prev_busy /= Rx_BUSY then
-        if Rx_BUSY = '0' then
-          if 97 <= conv_integer(DOUT) and conv_integer(DOUT) <= 122 then
-            DIN <= DOUT - x"20";
-          else
-            DIN <= DOUT;
-          end if;
-          data_ready <= '1';
+      if rx_ready = '1' then
+        if 97 <= conv_integer(DOUT) and conv_integer(DOUT) <= 122 then
+          DIN <= DOUT - x"20";
+        else
+          DIN <= DOUT;
         end if;
-        prev_busy <= Rx_BUSY;
+        data_ready <= '1';
       end if;
       -- write
-      if Tx_BUSY = '0' and Tx_GO = '0' and data_ready = '1'then
-        Tx_GO <= '1';
+      if tx_busy = '0' and data_ready = '1'then
+        tx_go <= '1';
+        rx_invalid <= '1';
         data_ready <= '0';
       else
-        Tx_GO <= '0';
+        tx_go <= '0';
       end if;
     end if;
   end process;
