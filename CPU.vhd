@@ -39,7 +39,7 @@ architecture Behavioral of CPU is
   end component;
 
   signal myregfile, my_regfile : regfile_t := (others => (others => '0'));
-  signal mystopbit, my_stopbit : std_logic := '0';
+  signal mystate, my_state : state_t := RUNNING;
 
   -- Fetch
   signal mypc : std_logic_vector(31 downto 0) := (others => '0');
@@ -65,9 +65,11 @@ architecture Behavioral of CPU is
   signal myALUcode : std_logic_vector(1 downto 0) := (others => '0');
   signal myALUretx : std_logic_vector(3 downto 0) := (others => '0');
   signal myALUretv : std_logic_vector(31 downto 0) := (others => '0');
-  signal myIOretx : std_logic_vector(3 downto 0) := (others => '0');
-  signal myIOretv : std_logic_vector(31 downto 0) := (others => '0');
   signal mynextpc : std_logic_vector(31 downto 0) := (others => '0');
+
+  -- IO
+  signal my_iox : std_logic_vector(3 downto 0) := (others => '0');
+  signal my_iov : std_logic_vector(3 downto 0) := (others => '0');
 
   -- Write
   signal myretx : std_logic_vector(3 downto 0) := (others => '0');
@@ -93,8 +95,31 @@ begin
   process(clk)
   begin
     if rising_edge(clk) then
-      myregfile <= my_regfile;
-      mystopbit <= my_stopbit;
+      case mystate is
+        when RUNNING =>
+          myregfile <= my_regfile;
+          mystate <= my_state;
+
+        -- WRITE
+        when PRE_WRITING =>
+          tx_go <= '1';
+          tx_data <= my_iov;
+        when WRITING =>
+          tx_go <= '0';
+          if tx_busy = '0' then
+            mystate <= RUNNING;
+          end if;
+
+        -- READ
+        when READING =>
+          if rx_ready = '1' then
+            rx_invalid <= '1';
+            myregfile(conv_integer(my_iox)) <= x"000000" & rx_data;
+            mystate <= RUNNING;
+          end if;
+        when POST_READING =>
+          rx_invalid <= '0';
+      end case;
     end if;
   end process;
 
@@ -149,7 +174,7 @@ begin
   end process;
 
   -- Branch
-  process(mypc, myopcode, myarg0, myarg1, myarg2, myarg3, mystopbit)
+  process(mypc, myopcode, myarg0, myarg1, myarg2, myarg3)
   begin
     case myopcode(3 downto 1) is
       when "110" =>
@@ -166,50 +191,27 @@ begin
             mynextpc <= mypc + 1;
           end if;
         end if;
-      when "101" =>
-        if mystopbit = '0' then
-          mynextpc <= mypc + 1;
-        else
-          mynextpc <= mypc;             -- invoke busy loop for IO instructions
-        end if;
       when others =>
         mynextpc <= mypc + 1;
     end case;
   end process;
 
   -- IO
-  process(myopcode, myoperand0, myarg1, mystopbit)
+  process(myopcode, myoperand0, myarg1)
   begin
-    myIOretx <= (others => '0');
-    myIOretv <= (others => '0');
-    rx_invalid <= '0';
-    tx_go <= '0';
-    case myopcode(3 downto 1) is
-      when "101" =>
-        if myopcode(0) = '0' then       -- READ
-          if rx_ready = '0' then
-            my_stopbit <= '1';
-          else
-            rx_invalid <= '1';
-            myIOretx <= myoperand0;
-            myIOretv <= x"000000" & rx_data;
-            my_stopbit <= '0';
-          end if;
-        else                            -- WRITE
-          if tx_busy = '0' then
-            if mystopbit = '0' then
-              tx_go <= '1';
-              tx_data <= myarg1(7 downto 0);
-              my_stopbit <= '1';
-            else
-              my_stopbit <= '0';
-            end if;
-          else
-            my_stopbit <= '1';
-          end if;
-        end if;
+    case myopcode is
+      when "1010" =>                    -- READ
+        my_iox <= myoperand0;
+        my_iov <= (others => '0');
+        my_state <= READING;
+      when "1011" =>                    -- WRITE
+        my_iox <= (others => '0');
+        my_iov <= myarg1(7 downto 0);
+        my_state <= PRE_WRITING;
       when others =>
-        my_stopbit <= '0';
+        my_iox <= (others => '0');
+        my_iov <= (others => '0');
+        my_state <= RUNNING;
     end case;
   end process;
 
@@ -217,21 +219,12 @@ begin
   -- Write --
   -----------
 
-  process(myopcode, myALUretx, myALUretv, myIOretx, myIOretv)
+  process(myopcode, myALUretx, myALUretv)
   begin
     case myopcode(3 downto 2) is
       when "00" =>
         myretx <= myALUretx;
         myretv <= myALUretv;
-      when "10" =>
-        case myopcode(1 downto 0) is
-          when "10" =>
-            myretx <= myIOretx;
-            myretv <= myIOretv;
-          when others =>
-            myretx <= (others => '0');
-            myretv <= (others => '0');
-        end case;
       when others =>
         myretx <= (others => '0');
         myretv <= (others => '0');
