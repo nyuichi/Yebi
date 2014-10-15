@@ -41,6 +41,9 @@ architecture Behavioral of CPU is
   signal myregfile, my_regfile : regfile_t := (others => (others => '0'));
   signal mystate, my_state : state_t := RUNNING;
 
+  signal myiox : std_logic_vector(3 downto 0) := (others => '0');
+  signal myiov : std_logic_vector(7 downto 0) := (others => '0');
+
   -- Fetch
   signal mypc : std_logic_vector(31 downto 0) := (others => '0');
   signal mycode : std_logic_vector(31 downto 0) := (others => '0');
@@ -66,10 +69,6 @@ architecture Behavioral of CPU is
   signal myALUretx : std_logic_vector(3 downto 0) := (others => '0');
   signal myALUretv : std_logic_vector(31 downto 0) := (others => '0');
   signal mynextpc : std_logic_vector(31 downto 0) := (others => '0');
-
-  -- IO
-  signal my_iox : std_logic_vector(3 downto 0) := (others => '0');
-  signal my_iov : std_logic_vector(7 downto 0) := (others => '0');
 
   -- Write
   signal myretx : std_logic_vector(3 downto 0) := (others => '0');
@@ -103,7 +102,7 @@ begin
         -- WRITE
         when PRE_WRITING =>
           tx_go <= '1';
-          tx_data <= my_iov;
+          tx_data <= myiov;
         when WRITING =>
           tx_go <= '0';
           if tx_busy = '0' then
@@ -114,7 +113,7 @@ begin
         when READING =>
           if rx_ready = '1' then
             rx_invalid <= '1';
-            myregfile(conv_integer(my_iox)) <= x"000000" & rx_data;
+            myregfile(conv_integer(myiox)) <= x"000000" & rx_data;
             mystate <= RUNNING;
           end if;
         when POST_READING =>
@@ -146,7 +145,7 @@ begin
     if myoperand3(15) = '0' then
       myarg3 <= x"0000" & myoperand3;
     else
-      myarg3 <= x"1111" & myoperand3;
+      myarg3 <= x"FFFF" & myoperand3;
     end if;
   end process;
 
@@ -201,16 +200,12 @@ begin
   begin
     case myopcode is
       when "1010" =>                    -- READ
-        my_iox <= myoperand0;
-        my_iov <= (others => '0');
+        myiox <= myoperand0;
         my_state <= READING;
       when "1011" =>                    -- WRITE
-        my_iox <= (others => '0');
-        my_iov <= myarg1(7 downto 0);
+        myiov <= myarg1(7 downto 0);
         my_state <= PRE_WRITING;
       when others =>
-        my_iox <= (others => '0');
-        my_iov <= (others => '0');
         my_state <= RUNNING;
     end case;
   end process;
