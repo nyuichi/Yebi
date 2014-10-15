@@ -69,7 +69,7 @@ architecture Behavioral of CPU is
 
   -- IO
   signal my_iox : std_logic_vector(3 downto 0) := (others => '0');
-  signal my_iov : std_logic_vector(3 downto 0) := (others => '0');
+  signal my_iov : std_logic_vector(7 downto 0) := (others => '0');
 
   -- Write
   signal myretx : std_logic_vector(3 downto 0) := (others => '0');
