@@ -21,20 +21,13 @@ architecture Behavioral of Rx is
 
 begin
 
-  process(state, invalid)
-  begin
-    if state'event and state = -1 then
-      ready <= '1';
-    else
-      if invalid = '1' then
-        ready <= '0';
-      end if;
-    end if;
-  end process;
-
   process(clk)
   begin
     if rising_edge(clk) then
+      if invalid = '1' then
+        ready <= '0';
+      end if;
+
       case state is
         when -1 =>
           if rx_pin = '0' then
@@ -49,6 +42,7 @@ begin
           if count = "0" & wtime(15 downto 1) then
             count <= count - 1;
             state <= -1;
+            ready <= '1';
           else
             count <= count - 1;
           end if;
