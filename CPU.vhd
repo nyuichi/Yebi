@@ -26,16 +26,6 @@ architecture Behavioral of CPU is
       retv : out std_logic_vector(31 downto 0));
   end component;
 
-  component Decode is
-    port (
-      code : in std_logic_vector(31 downto 0);
-      opcode : out std_logic_vector(3 downto 0);
-      operand0 : out std_logic_vector(3 downto 0);
-      operand1 : out std_logic_vector(3 downto 0);
-      operand2 : out std_logic_vector(3 downto 0);
-      operand3 : out std_logic_vector(15 downto 0));
-  end component;
-
   signal myregfile, my_regfile : regfile_t := (others => (others => '0'));
 
   -- Fetch
@@ -79,14 +69,6 @@ begin
     ival => myALUarg3,
     retv => myALUretv);
 
-  myDecode : Decode port map (
-    code => mycode,
-    opcode => myopcode,
-    operand0 => myoperand0,
-    operand1 => myoperand1,
-    operand2 => myoperand2,
-    operand3 => myoperand3);
-
   process(clk)
   begin
     if rising_edge(clk) then
@@ -102,6 +84,19 @@ begin
   begin
     mypc <= myregfile(15);
     mycode <= ram(conv_integer(myregfile(15)));
+  end process;
+
+  ------------
+  -- Decode --
+  ------------
+
+  process(mycode)
+  begin
+    myopcode <= mycode(31 downto 28);
+    myoperand0 <= mycode(27 downto 24);
+    myoperand1 <= mycode(23 downto 20);
+    myoperand2 <= mycode(19 downto 16);
+    myoperand3 <= mycode(15 downto 0);
   end process;
 
   ----------
