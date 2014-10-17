@@ -66,20 +66,18 @@ begin
   process(clk)
   begin
     if rising_edge(clk) then
-      if tx_en = '1' then
-        if tx_len < 16 then
-          tx_buf(conv_integer(tx_ptr + tx_len)) <= tx_data(7 downto 0);
-          tx_len <= tx_len + 1;
-        end if;
-      end if;
-
-      if tx_busy = '0' and tx_len > 0 then
-        tx_dat <= tx_buf(conv_integer(tx_ptr));
-        tx_ptr <= tx_ptr + 1;
-        tx_len <= tx_len - 1;
-        tx_go <= '1';
+      if tx_en = '1' and tx_len < 16 then
+        tx_buf(conv_integer(tx_ptr + tx_len)) <= tx_data(7 downto 0);
+        tx_len <= tx_len + 1;
       else
-        tx_go <= '0';
+        if tx_busy = '0' and tx_go = '0' and tx_len > 0 then
+          tx_dat <= tx_buf(conv_integer(tx_ptr));
+          tx_ptr <= tx_ptr + 1;
+          tx_len <= tx_len - 1;
+          tx_go <= '1';
+        else
+          tx_go <= '0';
+        end if;
       end if;
     end if;
   end process;
@@ -93,18 +91,16 @@ begin
   process(clk)
   begin
     if rising_edge(clk) then
-      if rx_ready = '1' and rx_len < 16 then
-        rx_invalid <= '1';
-        rx_buf(conv_integer(rx_ptr + rx_len)) <= rx_dat;
-        rx_len <= rx_len + 1;
+      if rx_en = '1' and rx_len > 0 then
+        rx_ptr <= rx_ptr + 1;
+        rx_len <= rx_len - 1;
       else
-        rx_invalid <= '0';
-      end if;
-
-      if rx_en = '1' then
-        if rx_len > 0 then
-          rx_ptr <= rx_ptr + 1;
-          rx_len <= rx_len - 1;
+        if rx_ready = '1' and rx_invalid = '0' and rx_len < 16 then
+          rx_buf(conv_integer(rx_ptr + rx_len)) <= rx_dat;
+          rx_len <= rx_len + 1;
+          rx_invalid <= '1';
+        else
+          rx_invalid <= '0';
         end if;
       end if;
     end if;
