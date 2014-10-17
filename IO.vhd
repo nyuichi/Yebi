@@ -86,7 +86,9 @@ begin
 
   -- READ
 
-  rx_data <= x"000000" & rx_buf(conv_integer(rx_ptr)) when rx_len > 0 else x"FFFFFFFF";
+  rx_data <= x"FFFFFFFF"
+             when rx_len = 0 or (rx_len = 1 and rx_en = '1')
+             else x"000000" & rx_buf(conv_integer(rx_ptr));
 
   process(clk)
   begin

@@ -54,9 +54,14 @@ begin
   process(clk)
   begin
     if rising_edge(clk) then
-      -- write
-      tx_en <= '1';
-      tx_data <= x"00000030";
+      if rx_data /= x"FFFFFFFF" then
+        tx_data <= rx_data;
+        tx_en <= '1';
+        rx_en <= '1';
+      else
+        tx_en <= '0';
+        rx_en <= '0';
+      end if;
     end if;
   end process;
 
