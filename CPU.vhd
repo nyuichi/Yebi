@@ -9,12 +9,10 @@ entity CPU is
   port (
     clk : in std_logic;
     ram : in ram_t;
-    tx_go : out std_logic;
-    tx_busy : in std_logic;
-    tx_data : out std_logic_vector(7 downto 0);
-    rx_invalid : out std_logic;
-    rx_ready : in std_logic;
-    rx_data : in std_logic_vector(7 downto 0));
+    tx_en : out std_logic;
+    tx_data : out std_logic_vector(31 downto 0);
+    rx_en : out std_logic;
+    rx_data : in std_logic_vector(31 downto 0));
 end CPU;
 
 architecture Behavioral of CPU is
@@ -39,10 +37,6 @@ architecture Behavioral of CPU is
   end component;
 
   signal myregfile, my_regfile : regfile_t := (others => (others => '0'));
-  signal mystate, my_state : state_t := RUNNING;
-
-  signal myiox : std_logic_vector(3 downto 0) := (others => '0');
-  signal myiov : std_logic_vector(7 downto 0) := (others => '0');
 
   -- Fetch
   signal mypc : std_logic_vector(31 downto 0) := (others => '0');
@@ -68,6 +62,8 @@ architecture Behavioral of CPU is
   signal myALUcode : std_logic_vector(1 downto 0) := (others => '0');
   signal myALUretx : std_logic_vector(3 downto 0) := (others => '0');
   signal myALUretv : std_logic_vector(31 downto 0) := (others => '0');
+  signal myIOretx : std_logic_vector(3 downto 0) := (others => '0');
+  signal myIOretv : std_logic_vector(31 downto 0) := (others => '0');
   signal mynextpc : std_logic_vector(31 downto 0) := (others => '0');
 
   -- Write
@@ -94,31 +90,7 @@ begin
   process(clk)
   begin
     if rising_edge(clk) then
-      case mystate is
-        when RUNNING =>
-          myregfile <= my_regfile;
-          mystate <= my_state;
-
-        -- WRITE
-        when PRE_WRITING =>
-          tx_go <= '1';
-          tx_data <= myiov;
-        when WRITING =>
-          tx_go <= '0';
-          if tx_busy = '0' then
-            mystate <= RUNNING;
-          end if;
-
-        -- READ
-        when READING =>
-          if rx_ready = '1' then
-            rx_invalid <= '1';
-            myregfile(conv_integer(myiox)) <= x"000000" & rx_data;
-            mystate <= RUNNING;
-          end if;
-        when POST_READING =>
-          rx_invalid <= '0';
-      end case;
+      myregfile <= my_regfile;
     end if;
   end process;
 
@@ -196,17 +168,27 @@ begin
   end process;
 
   -- IO
-  process(myopcode, myoperand0, myarg1)
+  process(myopcode, myoperand0, myarg1, rx_data)
   begin
     case myopcode is
       when "1010" =>                    -- READ
-        myiox <= myoperand0;
-        my_state <= READING;
+        myIOretx <= myoperand0;
+        myIOretv <= rx_data;
+        tx_data <= (others => '0');
+        rx_en <= '1';
+        tx_en <= '0';
       when "1011" =>                    -- WRITE
-        myiov <= myarg1(7 downto 0);
-        my_state <= PRE_WRITING;
+        myIOretx <= (others => '0');
+        myIOretv <= (others => '0');
+        tx_data <= myarg1;
+        tx_en <= '1';
+        rx_en <= '0';
       when others =>
-        my_state <= RUNNING;
+        myIOretx <= (others => '0');
+        myIOretv <= (others => '0');
+        tx_data <= (others => '0');
+        rx_en <= '0';
+        tx_en <= '0';
     end case;
   end process;
 
@@ -214,12 +196,15 @@ begin
   -- Write --
   -----------
 
-  process(myopcode, myALUretx, myALUretv)
+  process(myopcode, myALUretx, myALUretv, myIOretx, myIOretv)
   begin
     case myopcode(3 downto 2) is
       when "00" =>
         myretx <= myALUretx;
         myretv <= myALUretv;
+      when "10" =>
+        myretx <= myIOretx;
+        myretv <= myIOretv;
       when others =>
         myretx <= (others => '0');
         myretv <= (others => '0');
