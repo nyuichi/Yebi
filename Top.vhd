@@ -79,10 +79,12 @@ architecture Behavioral of Top is
 
   signal myramloopback : ram_t := (
     x"00000000",
-    x"A1000000",
-    x"B0100000",
-    x"C00FFFFE",
-    x"00000000", x"00000000", x"00000000",
+    x"0100FFFF",
+    x"A2000000",
+    x"C12FFFFF",
+    x"B0200000",
+    x"C00FFFFD",
+    x"00000000",
     x"00000000", x"00000000", x"00000000", x"00000000", x"00000000",
     x"00000000", x"00000000", x"00000000", x"00000000", x"00000000",
     x"00000000", x"00000000", x"00000000", x"00000000", x"00000000",
@@ -115,7 +117,7 @@ begin
 
   myCPU : CPU port map (
     clk => clk,
-    ram => myramfib,
+    ram => myramloopback,
     tx_en => tx_en,
     tx_data => tx_data,
     rx_en => rx_en,
