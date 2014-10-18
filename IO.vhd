@@ -91,7 +91,7 @@ begin
         if rx_len = 1 then
           rx_data <= x"FFFFFFFF";
         else
-          rx_data <= rx_buf(conv_integer(rx_ptr + 1));
+          rx_data <= x"000000" & rx_buf(conv_integer(rx_ptr + 1));
         end if;
         rx_ptr <= rx_ptr + 1;
         rx_len <= rx_len - 1;
