@@ -12,7 +12,7 @@ entity IO is
     tx_en : in std_logic;
     tx_data : in std_logic_vector(31 downto 0);
     rx_en : in std_logic;
-    rx_data : out std_logic_vector(31 downto 0));
+    rx_data : out std_logic_vector(31 downto 0) := x"FFFFFFFF");
 end IO;
 
 architecture Behavioral of IO is
@@ -30,12 +30,12 @@ architecture Behavioral of IO is
       rx_data : out std_logic_vector(7 downto 0));
   end component;
 
-  signal tx_go : std_logic;
-  signal tx_busy : std_logic;
-  signal tx_dat : std_logic_vector(7 downto 0);
-  signal rx_invalid : std_logic;
-  signal rx_ready : std_logic;
-  signal rx_dat : std_logic_vector(7 downto 0);
+  signal tx_go : std_logic := '0';
+  signal tx_busy : std_logic := '0';
+  signal tx_dat : std_logic_vector(7 downto 0) := (others => '0');
+  signal rx_invalid : std_logic := '0';
+  signal rx_ready : std_logic := '0';
+  signal rx_dat : std_logic_vector(7 downto 0) := (others => '0');
 
   type buf_t is
     array(0 to 15) of std_logic_vector(7 downto 0);
@@ -84,18 +84,22 @@ begin
 
   -- READ
 
-  rx_data <= x"FFFFFFFF"
-             when rx_len = 0 or (rx_len = 1 and rx_en = '1')
-             else x"000000" & rx_buf(conv_integer(rx_ptr));
-
   process(clk)
   begin
     if rising_edge(clk) then
       if rx_en = '1' and rx_len > 0 then
+        if rx_len = 1 then
+          rx_data <= x"FFFFFFFF";
+        else
+          rx_data <= rx_buf(conv_integer(rx_ptr + 1));
+        end if;
         rx_ptr <= rx_ptr + 1;
         rx_len <= rx_len - 1;
       else
         if rx_ready = '1' and rx_invalid = '0' and rx_len < 16 then
+          if rx_len = 0 then
+            rx_data <= x"000000" & rx_dat;
+          end if;
           rx_buf(conv_integer(rx_ptr + rx_len)) <= rx_dat;
           rx_len <= rx_len + 1;
           rx_invalid <= '1';
