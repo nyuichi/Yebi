@@ -9,10 +9,10 @@ entity CPU is
   port (
     clk : in std_logic;
     ram : in ram_t;
-    tx_en : out std_logic;
-    tx_data : out std_logic_vector(31 downto 0);
-    rx_en : out std_logic;
-    rx_data : in std_logic_vector(31 downto 0));
+    io_tx_en : out std_logic;
+    io_tx_data : out std_logic_vector(31 downto 0);
+    io_rx_en : out std_logic;
+    io_rx_data : in std_logic_vector(31 downto 0));
 end CPU;
 
 architecture Behavioral of CPU is
@@ -163,27 +163,27 @@ begin
   end process;
 
   -- IO
-  process(myopcode, myoperand0, myarg1, rx_data)
+  process(myopcode, myoperand0, myarg1, io_rx_data)
   begin
     case myopcode is
       when "1010" =>                    -- READ
         myIOretx <= myoperand0;
-        myIOretv <= rx_data;
-        tx_data <= (others => '0');
-        rx_en <= '1';
-        tx_en <= '0';
+        myIOretv <= io_rx_data;
+        io_tx_data <= (others => '0');
+        io_rx_en <= '1';
+        io_tx_en <= '0';
       when "1011" =>                    -- WRITE
         myIOretx <= (others => '0');
         myIOretv <= (others => '0');
-        tx_data <= myarg1;
-        tx_en <= '1';
-        rx_en <= '0';
+        io_tx_data <= myarg1;
+        io_tx_en <= '1';
+        io_rx_en <= '0';
       when others =>
         myIOretx <= (others => '0');
         myIOretv <= (others => '0');
-        tx_data <= (others => '0');
-        rx_en <= '0';
-        tx_en <= '0';
+        io_tx_data <= (others => '0');
+        io_rx_en <= '0';
+        io_tx_en <= '0';
     end case;
   end process;
 
