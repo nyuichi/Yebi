@@ -27,6 +27,7 @@ architecture Behavioral of CPU is
   end component;
 
   signal myregfile, my_regfile : regfile_t := (others => (others => '0'));
+  signal mystate, my_state : std_logic_vector(1 downto 0) := (others => '0');
 
   -- Fetch
   signal mypc : std_logic_vector(31 downto 0) := (others => '0');
@@ -72,8 +73,31 @@ begin
   process(clk)
   begin
     if rising_edge(clk) then
-      myregfile <= my_regfile;
+      mystate <= my_state;
+
+      -- cpu instruction issue or wait
+      case mystate is
+        when "00" =>
+          myregfile <= my_regfile;
+        when others =>
+      end case;
     end if;
+  end process;
+
+  -- cpu state transition
+  process(mystate, myopcode)
+  begin
+    case mystate is
+      when "00" =>
+        case myopcode(3 downto 2) is
+          when "00" =>
+            my_state <= "11";
+          when others =>
+            my_state <= "00";
+        end case;
+      when others =>
+        my_state <= mystate - 1;
+    end case;
   end process;
 
   -----------
