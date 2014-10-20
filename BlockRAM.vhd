@@ -15,6 +15,19 @@ end BlockRAM;
 
 architecture Behavioral of BlockRAM is
 
+  constant myramhello : ram_t := (
+    0 => x"00000000",
+    1 => x"01000041",
+    2 => x"C0000001",
+    others => (others => '0'));
+
+  constant myramaaa : ram_t := (
+    0 => x"00000000",
+    1 => x"01000041",
+    2 => x"B0100000",
+    3 => x"C0000002",
+    others => (others => '0'));
+
   constant myramfib : ram_t := (
     0 => x"00000000",                        -- 0 nop
     1 => x"0300000A",                        -- 1 mov $3, 10
@@ -41,7 +54,7 @@ architecture Behavioral of BlockRAM is
     5 => x"C00FFFFD",                        -- 5 br -3
     others => (others => '0'));
 
-  signal ram : ram_t := myramfib;
+  signal ram : ram_t := myramlo;
 
   signal addr_reg : std_logic_vector(19 downto 0) := (others => '0');
 

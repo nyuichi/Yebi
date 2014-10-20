@@ -70,6 +70,61 @@ begin
 
     wait for (16 * BR);
 
+    wait for BR; RS_RX <= '0'; -- start-bit
+    wait for BR; RS_RX <= '1'; -- data-bit 8'hc5
+    wait for BR; RS_RX <= '0';
+    wait for BR; RS_RX <= '1';
+    wait for BR; RS_RX <= '0';
+    wait for BR; RS_RX <= '0';
+    wait for BR; RS_RX <= '0';
+    wait for BR; RS_RX <= '1';
+    wait for BR; RS_RX <= '1';
+    wait for BR; RS_RX <= '1'; -- stop-bit
+
+    wait for BR; RS_RX <= '0'; -- start-bit
+    wait for BR; RS_RX <= '1'; -- data-bit 8'hc5
+    wait for BR; RS_RX <= '0';
+    wait for BR; RS_RX <= '1';
+    wait for BR; RS_RX <= '0';
+    wait for BR; RS_RX <= '0';
+    wait for BR; RS_RX <= '0';
+    wait for BR; RS_RX <= '1';
+    wait for BR; RS_RX <= '1';
+    wait for BR; RS_RX <= '1'; -- stop-bit
+
+    wait for BR; RS_RX <= '0'; -- start-bit
+    wait for BR; RS_RX <= '1'; -- data-bit 8'hc5
+    wait for BR; RS_RX <= '0';
+    wait for BR; RS_RX <= '1';
+    wait for BR; RS_RX <= '0';
+    wait for BR; RS_RX <= '0';
+    wait for BR; RS_RX <= '0';
+    wait for BR; RS_RX <= '1';
+    wait for BR; RS_RX <= '1';
+    wait for BR; RS_RX <= '1'; -- stop-bit
+
+    wait for BR; RS_RX <= '0'; -- start-bit
+    wait for BR; RS_RX <= '1'; -- data-bit 8'hc5
+    wait for BR; RS_RX <= '0';
+    wait for BR; RS_RX <= '1';
+    wait for BR; RS_RX <= '0';
+    wait for BR; RS_RX <= '0';
+    wait for BR; RS_RX <= '0';
+    wait for BR; RS_RX <= '1';
+    wait for BR; RS_RX <= '1';
+    wait for BR; RS_RX <= '1'; -- stop-bit
+
+    wait for BR; RS_RX <= '0'; -- start-bit
+    wait for BR; RS_RX <= '1'; -- data-bit 8'hc5
+    wait for BR; RS_RX <= '0';
+    wait for BR; RS_RX <= '1';
+    wait for BR; RS_RX <= '0';
+    wait for BR; RS_RX <= '0';
+    wait for BR; RS_RX <= '0';
+    wait for BR; RS_RX <= '1';
+    wait for BR; RS_RX <= '1';
+    wait for BR; RS_RX <= '1'; -- stop-bit
+
     assert false report "Simulation End." severity failure;
   end process;
 

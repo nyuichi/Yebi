@@ -30,9 +30,9 @@ architecture Behavioral of CPU is
       retv : out std_logic_vector(31 downto 0));
   end component;
 
-  signal myregfile, my_regfile : regfile_t := (others => (others => '0'));
-  signal mystate, my_state : state_t := FETCHING;
-  signal mycount, my_count : integer range 0 to 3 := 1;
+  signal myregfile, my_regfile : regfile_t := (1 => x"00000061", others => (others => '0'));
+  signal mystate : state_t := FETCHING;
+  signal mycount : integer range 0 to 3 := 1;
 
   -- Fetch
   signal mypc, my_pc : std_logic_vector(31 downto 0) := (others => '0');
@@ -122,37 +122,27 @@ begin
         io_tx_en <= '0';
       end if;
 
-      mystate <= my_state;
-      mycount <= my_count;
+      case mystate is
+        when FETCHING =>
+          if mycount = 0 then
+            mystate <= DECODING;
+          else
+            mycount <= mycount - 1;
+          end if;
+        when DECODING =>
+          mystate <= EXECUTING;
+          mycount <= mynextcount;
+        when EXECUTING =>
+          if mycount = 0 then
+            mystate <= WRITING;
+          else
+            mycount <= mycount - 1;
+          end if;
+        when WRITING =>
+          mystate <= FETCHING;
+          mycount <= 3;
+      end case;
     end if;
-  end process;
-
-  -----------
-  -- State --
-  -----------
-
-  process(mystate, mycount, mynextcount)
-  begin
-    case mystate is
-      when FETCHING =>
-        if mycount = 0 then
-          my_state <= DECODING;
-        else
-          my_count <= mycount - 1;
-        end if;
-      when DECODING =>
-        my_state <= EXECUTING;
-        my_count <= mynextcount;
-      when EXECUTING =>
-        if mycount = 0 then
-          my_state <= WRITING;
-        else
-          my_count <= mycount - 1;
-        end if;
-      when WRITING =>
-        my_state <= FETCHING;
-        my_count <= 3;
-    end case;
   end process;
 
   -----------
