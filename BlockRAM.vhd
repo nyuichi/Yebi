@@ -32,14 +32,16 @@ architecture Behavioral of BlockRAM is
     11 => x"C00FFFFF",                        -- B br EXIT
     others => (others => '0'));
 
-  signal ram : ram_t := (
-    0 => x"00000000",
-    1 => x"0100FFFF",
-    2 => x"A2000000",
-    3 => x"C12FFFFF",
-    4 => x"B0200000",
-    5 => x"C00FFFFD",
+  constant myramlo : ram_t := (
+    0 => x"00000000",                        -- 0 nop
+    1 => x"0100FFFF",                        -- 1 mov $1, -1
+    2 => x"A2000000",                        -- 2 read $2
+    3 => x"C12FFFFF",                        -- 3 beq $1, $2, $ip, -1
+    4 => x"B0200000",                        -- 4 write $2
+    5 => x"C00FFFFD",                        -- 5 br -3
     others => (others => '0'));
+
+  signal ram : ram_t := myramfib;
 
   signal addr_reg : std_logic_vector(19 downto 0) := (others => '0');
 

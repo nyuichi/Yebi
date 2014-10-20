@@ -32,7 +32,7 @@ architecture Behavioral of CPU is
 
   signal myregfile, my_regfile : regfile_t := (others => (others => '0'));
   signal mystate, my_state : state_t := FETCHING;
-  signal mycount, my_count : integer range 0 to 3 := 3;
+  signal mycount, my_count : integer range 0 to 3 := 1;
 
   -- Fetch
   signal mypc, my_pc : std_logic_vector(31 downto 0) := (others => '0');
@@ -183,11 +183,11 @@ begin
       my_operand3 <= x"FFFF" & mycode(15 downto 0);
     end if;
 
-    case myopcode(3 downto 1) is
+    case mycode(31 downto 29) is
       when "100" =>
-        mynextcount <= 3;
-      when others =>
         mynextcount <= 1;
+      when others =>
+        mynextcount <= 0;
     end case;
   end process;
 
