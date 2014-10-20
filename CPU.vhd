@@ -8,7 +8,11 @@ use work.Util.all;
 entity CPU is
   port (
     clk : in std_logic;
-    ram : in ram_t;
+    ram_addr : out std_logic_vector(19 downto 0);
+    ram_rx_en : out std_logic;
+    ram_rx_data : in std_logic_vector(31 downto 0);
+    ram_tx_en : out std_logic;
+    ram_tx_data : out std_logic_vector(31 downto 0);
     io_tx_en : out std_logic;
     io_tx_data : out std_logic_vector(31 downto 0);
     io_rx_en : out std_logic;
@@ -27,23 +31,21 @@ architecture Behavioral of CPU is
   end component;
 
   signal myregfile, my_regfile : regfile_t := (others => (others => '0'));
+  signal mystate, my_state : state_t := FETCHING;
+  signal mycount, my_count : integer range 0 to 3 := 3;
 
   -- Fetch
-  signal mypc : std_logic_vector(31 downto 0) := (others => '0');
-  signal mycode : std_logic_vector(31 downto 0) := (others => '0');
+  signal mypc, my_pc : std_logic_vector(31 downto 0) := (others => '0');
+  signal mycode, my_code : std_logic_vector(31 downto 0) := (others => '0');
 
   -- Decode
-  signal myopcode : std_logic_vector(3 downto 0) := (others => '0');
-  signal myoperand0 : std_logic_vector(3 downto 0) := (others => '0');
-  signal myoperand1 : std_logic_vector(3 downto 0) := (others => '0');
-  signal myoperand2 : std_logic_vector(3 downto 0) := (others => '0');
-  signal myoperand3 : std_logic_vector(15 downto 0) := (others => '0');
-
-  -- Read
-  signal myarg0 : std_logic_vector(31 downto 0) := (others => '0');
-  signal myarg1 : std_logic_vector(31 downto 0) := (others => '0');
-  signal myarg2 : std_logic_vector(31 downto 0) := (others => '0');
-  signal myarg3 : std_logic_vector(31 downto 0) := (others => '0');
+  signal myopcode, my_opcode : std_logic_vector(3 downto 0) := (others => '0');
+  signal myregindex, my_regindex : std_logic_vector(3 downto 0) := (others => '0');
+  signal myoperand0, my_operand0 : std_logic_vector(31 downto 0) := (others => '0');
+  signal myoperand1, my_operand1 : std_logic_vector(31 downto 0) := (others => '0');
+  signal myoperand2, my_operand2 : std_logic_vector(31 downto 0) := (others => '0');
+  signal myoperand3, my_operand3 : std_logic_vector(31 downto 0) := (others => '0');
+  signal mynextcount : integer range 0 to 3 := 3;
 
   -- Execute
   signal myALUarg1 : std_logic_vector(31 downto 0) := (others => '0');
@@ -54,11 +56,11 @@ architecture Behavioral of CPU is
   signal myALUretv : std_logic_vector(31 downto 0) := (others => '0');
   signal myIOretx : std_logic_vector(3 downto 0) := (others => '0');
   signal myIOretv : std_logic_vector(31 downto 0) := (others => '0');
-  signal mynextpc : std_logic_vector(31 downto 0) := (others => '0');
-
-  -- Write
-  signal myretx : std_logic_vector(3 downto 0) := (others => '0');
-  signal myretv : std_logic_vector(31 downto 0) := (others => '0');
+  signal myRAMretx : std_logic_vector(3 downto 0) := (others => '0');
+  signal myRAMretv : std_logic_vector(31 downto 0) := (others => '0');
+  signal myretx, my_retx : std_logic_vector(3 downto 0) := (others => '0');
+  signal myretv, my_retv : std_logic_vector(31 downto 0) := (others => '0');
+  signal mynextpc, my_nextpc : std_logic_vector(31 downto 0) := (others => '0');
 
 begin
 
@@ -72,48 +74,121 @@ begin
   process(clk)
   begin
     if rising_edge(clk) then
-      myregfile <= my_regfile;
+      case mystate is
+        when FETCHING =>
+          mypc <= my_pc;
+          mycode <= my_code;
+        when DECODING =>
+          myopcode <= my_opcode;
+          myregindex <= my_regindex;
+          myoperand0 <= my_operand0;
+          myoperand1 <= my_operand1;
+          myoperand2 <= my_operand2;
+          myoperand3 <= my_operand3;
+        when EXECUTING =>
+          myretx <= my_retx;
+          myretv <= my_retv;
+          mynextpc <= my_nextpc;
+        when WRITING =>
+          myregfile <= my_regfile;
+      end case;
+
+      -- RAM
+
+      if mystate = FETCHING then
+        ram_addr <= myregfile(15)(19 downto 0);
+        ram_rx_en <= '1';
+      elsif mystate = EXECUTING and myopcode = "1000" then
+        ram_addr <= myoperand2 + myoperand3;
+        ram_rx_en <= '1';
+      elsif mystate = EXECUTING and myopcode = "1001" then
+        ram_addr <= myoperand2 + myoperand3;
+        ram_tx_data <= myoperand1;
+        ram_tx_en <= '1';
+      else
+        ram_tx_en <= '0';
+        ram_rx_en <= '0';
+      end if;
+
+      -- IO
+
+      if mystate = WRITING and myopcode = "1010" then
+        io_rx_en <= '1';
+      elsif mystate = EXECUTING and myopcode = "1011" and mycount = 0 then
+        io_tx_data <= myoperand1;
+        io_tx_en <= '1';
+      else
+        io_rx_en <= '0';
+        io_tx_en <= '0';
+      end if;
+
+      mystate <= my_state;
+      mycount <= my_count;
     end if;
+  end process;
+
+  -----------
+  -- State --
+  -----------
+
+  process(mystate, mycount, mynextcount)
+  begin
+    case mystate is
+      when FETCHING =>
+        if mycount = 0 then
+          my_state <= DECODING;
+        else
+          my_count <= mycount - 1;
+        end if;
+      when DECODING =>
+        my_state <= EXECUTING;
+        my_count <= mynextcount;
+      when EXECUTING =>
+        if mycount = 0 then
+          my_state <= WRITING;
+        else
+          my_count <= mycount - 1;
+        end if;
+      when WRITING =>
+        my_state <= FETCHING;
+        my_count <= 3;
+    end case;
   end process;
 
   -----------
   -- Fetch --
   -----------
 
-  process(myregfile, ram)
+  process(myregfile, ram_rx_data)
   begin
-    mypc <= myregfile(15);
-    mycode <= ram(conv_integer(myregfile(15)));
+    my_pc <= myregfile(15);
+    my_code <= ram_rx_data;
   end process;
 
   ------------
   -- Decode --
   ------------
 
-  process(mycode)
+  process(mycode, myregfile)
   begin
-    myopcode <= mycode(31 downto 28);
-    myoperand0 <= mycode(27 downto 24);
-    myoperand1 <= mycode(23 downto 20);
-    myoperand2 <= mycode(19 downto 16);
-    myoperand3 <= mycode(15 downto 0);
-  end process;
+    my_opcode <= mycode(31 downto 28);
+    my_regindex <= mycode(27 downto 24);
+    my_operand0 <= myregfile(conv_integer(mycode(27 downto 24)));
+    my_operand1 <= myregfile(conv_integer(mycode(23 downto 20)));
+    my_operand2 <= myregfile(conv_integer(mycode(19 downto 16)));
 
-  ----------
-  -- Read --
-  ----------
-
-  process(myregfile, myoperand0, myoperand1, myoperand2, myoperand3)
-  begin
-    myarg0 <= myregfile(conv_integer(myoperand0));
-    myarg1 <= myregfile(conv_integer(myoperand1));
-    myarg2 <= myregfile(conv_integer(myoperand2));
-
-    if myoperand3(15) = '0' then
-      myarg3 <= x"0000" & myoperand3;
+    if mycode(15) = '0' then
+      my_operand3 <= x"0000" & mycode(15 downto 0);
     else
-      myarg3 <= x"FFFF" & myoperand3;
+      my_operand3 <= x"FFFF" & mycode(15 downto 0);
     end if;
+
+    case myopcode(3 downto 1) is
+      when "100" =>
+        mynextcount <= 3;
+      when others =>
+        mynextcount <= 1;
+    end case;
   end process;
 
   -------------
@@ -121,15 +196,15 @@ begin
   -------------
 
   -- ALU
-  process(myopcode, myoperand0, myarg1, myarg2, myarg3)
+  process(myopcode, myregindex, myoperand1, myoperand2, myoperand3)
   begin
     case myopcode(3 downto 2) is
       when "00" =>
         myALUcode <= myopcode(1 downto 0);
-        myALUarg1 <= myarg1;
-        myALUarg2 <= myarg2;
-        myALUarg3 <= myarg3;
-        myALUretx <= myoperand0;
+        myALUarg1 <= myoperand1;
+        myALUarg2 <= myoperand2;
+        myALUarg3 <= myoperand3;
+        myALUretx <= myregindex;
       when others =>
         myALUcode <= (others => '0');
         myALUarg1 <= (others => '0');
@@ -140,71 +215,88 @@ begin
   end process;
 
   -- Branch
-  process(mypc, myopcode, myarg0, myarg1, myarg2, myarg3)
+  process(mypc, myopcode, myoperand0, myoperand1, myoperand2, myoperand3)
   begin
     case myopcode(3 downto 1) is
       when "110" =>
         if myopcode(0) = '0' then
-          if myarg0 = myarg1 then
-            mynextpc <= myarg2 + myarg3;
+          if myoperand0 = myoperand1 then
+            my_nextpc <= myoperand2 + myoperand3;
           else
-            mynextpc <= mypc + 1;
+            my_nextpc <= mypc + 1;
           end if;
         else
-          if myarg0 <= myarg1 then
-            mynextpc <= myarg2 + myarg3;
+          if myoperand0 <= myoperand1 then
+            my_nextpc <= myoperand2 + myoperand3;
           else
-            mynextpc <= mypc + 1;
+            my_nextpc <= mypc + 1;
           end if;
         end if;
       when others =>
-        mynextpc <= mypc + 1;
+        my_nextpc <= mypc + 1;
     end case;
   end process;
 
   -- IO
-  process(myopcode, myoperand0, myarg1, io_rx_data)
+  process(myopcode, myregindex, myoperand1, io_rx_data)
   begin
     case myopcode is
       when "1010" =>                    -- READ
-        myIOretx <= myoperand0;
+        myIOretx <= myregindex;
         myIOretv <= io_rx_data;
-        io_tx_data <= (others => '0');
-        io_rx_en <= '1';
-        io_tx_en <= '0';
       when "1011" =>                    -- WRITE
         myIOretx <= (others => '0');
         myIOretv <= (others => '0');
-        io_tx_data <= myarg1;
-        io_tx_en <= '1';
-        io_rx_en <= '0';
       when others =>
         myIOretx <= (others => '0');
         myIOretv <= (others => '0');
-        io_tx_data <= (others => '0');
-        io_rx_en <= '0';
-        io_tx_en <= '0';
+    end case;
+  end process;
+
+  -- RAM
+  process(myopcode, myregindex, ram_rx_data)
+  begin
+    case myopcode is
+      when "1000" =>                    -- load
+        myRAMretx <= myregindex;
+        myRAMretv <= ram_rx_data;
+      when "1001" =>                    -- store
+        myRAMretx <= (others => '0');
+        myRAMretv <= (others => '0');
+      when others =>
+        myRAMretx <= (others => '0');
+        myRAMretv <= (others => '0');
+    end case;
+  end process;
+
+  -- Join
+  process(myopcode, myALUretx, myALUretv, myIOretx, myIOretv, myRAMretx, myRAMretv)
+  begin
+    case myopcode(3 downto 2) is
+      when "00" =>
+        my_retx <= myALUretx;
+        my_retv <= myALUretv;
+      when "10" =>
+        case myopcode(1) is
+          when '0' =>
+            my_retx <= myRAMretx;
+            my_retv <= myRAMretv;
+          when '1' =>
+            my_retx <= myIOretx;
+            my_retv <= myIOretv;
+          when others =>
+            my_retx <= (others => '0');
+            my_retv <= (others => '0');
+        end case;
+      when others =>
+        my_retx <= (others => '0');
+        my_retv <= (others => '0');
     end case;
   end process;
 
   -----------
   -- Write --
   -----------
-
-  process(myopcode, myALUretx, myALUretv, myIOretx, myIOretv)
-  begin
-    case myopcode(3 downto 2) is
-      when "00" =>
-        myretx <= myALUretx;
-        myretv <= myALUretv;
-      when "10" =>
-        myretx <= myIOretx;
-        myretv <= myIOretv;
-      when others =>
-        myretx <= (others => '0');
-        myretv <= (others => '0');
-    end case;
-  end process;
 
   process(myregfile, myretx, myretv, mynextpc)
   begin

@@ -8,6 +8,9 @@ package Util is
     array(0 to 15) of std_logic_vector(31 downto 0);
 
   type ram_t is
-    array(0 to 107) of std_logic_vector(31 downto 0);
+    array(0 to 16383) of std_logic_vector(31 downto 0);
+
+  type state_t is (
+    FETCHING, DECODING, EXECUTING, WRITING);
 
 end package;
