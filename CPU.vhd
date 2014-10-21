@@ -30,7 +30,7 @@ architecture Behavioral of CPU is
       retv : out std_logic_vector(31 downto 0));
   end component;
 
-  signal myregfile, my_regfile : regfile_t := (1 => x"00000061", others => (others => '0'));
+  signal myregfile, my_regfile : regfile_t := (others => (others => '0'));
   signal mystate : state_t := FETCHING;
   signal mycount : integer range 0 to 3 := 1;
 
@@ -98,21 +98,25 @@ begin
       if mystate = FETCHING then
         ram_addr <= myregfile(15)(19 downto 0);
         ram_rx_en <= '1';
+        ram_tx_en <= '0';
       elsif mystate = EXECUTING and myopcode = "1000" then
         ram_addr <= myoperand2 + myoperand3;
         ram_rx_en <= '1';
+        ram_tx_en <= '0';
       elsif mystate = EXECUTING and myopcode = "1001" then
         ram_addr <= myoperand2 + myoperand3;
         ram_tx_data <= myoperand1;
         ram_tx_en <= '1';
+        ram_rx_en <= '0';
       else
+        ram_addr <= (others => '0');
         ram_tx_en <= '0';
         ram_rx_en <= '0';
       end if;
 
       -- IO
 
-      if mystate = WRITING and myopcode = "1010" then
+      if mystate = EXECUTING and myopcode = "1010" and mycount = 0 and io_rx_data /= x"FFFFFFFF" then
         io_rx_en <= '1';
       elsif mystate = EXECUTING and myopcode = "1011" and mycount = 0 then
         io_tx_data <= myoperand1;

@@ -54,6 +54,17 @@ architecture Behavioral of BlockRAM is
     5 => x"C00FFFFD",                        -- 5 br -3
     others => (others => '0'));
 
+  constant myramlo2 : ram_t := (
+    0 => x"00000000",                        -- 0 nop
+    1 => x"0100FFFF",                        -- 1 mov $1, -1
+    2 => x"A2000000",                        -- 2 read $2
+    3 => x"C1200005",                        -- 3 beq $1, $2, 5
+    4 => x"C0000006",                        -- 4 br 6
+    5 => x"03300001",                        -- 5 add $3, $3, 1
+    6 => x"B0300000",                        -- 6 write $2
+    7 => x"C0000002",                        -- 7 br 2
+    others => (others => '0'));
+
   signal ram : ram_t := myramlo;
 
   signal addr_reg : std_logic_vector(19 downto 0) := (others => '0');
