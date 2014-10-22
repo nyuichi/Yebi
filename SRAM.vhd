@@ -3,12 +3,12 @@ use IEEE.std_logic_1164.all;
 
 entity SRAM is
   port (
-    CLK : in std_logic;
-    ADDR : in std_logic_vector(19 downto 0);
-    RX : out std_logic_vector(31 downto 0);
-    RX_EN : in std_logic;
-    TX : in std_logic_vector(31 downto 0);
-    TX_EN : in std_logic;
+    clk : in std_logic;
+    addr : in std_logic_vector(19 downto 0);
+    rx : out std_logic_vector(31 downto 0);
+    rx_en : in std_logic;
+    tx : in std_logic_vector(31 downto 0);
+    tx_en : in std_logic;
 
     -- Hardware Pins
     ZD : inout std_logic_vector(31 downto 0);
@@ -31,33 +31,36 @@ end SRAM;
 architecture Behavioral of SRAM is
 begin
 
-  process(CLK)
+  process(clk)
   begin
-    if rising_edge(CLK) then
-      if TX_EN = '1' then
+    if rising_edge(clk) then
+      if tx_en = '1' then
         XWA <= '0';
       else
         XWA <= '1';
       end if;
 
-      if RX_EN = '1' then
+      if rx_en = '1' then
         ZD <= (others => 'Z');
-      elsif TX_EN = '1' then
-        ZD <= TX;
+      elsif tx_en = '1' then
+        ZD <= tx;
       end if;
 
-      RX <= ZD;
+      rx <= ZD;
     end if;
   end process;
 
 -- ignore ZDP
-  ZA <= ADDR;
+  ZA <= addr;
+  ZDP <= (others => 'Z');
   XE1 <= '0';
   E2A <= '1';
   XE3 <= '0';
   XZBE <= "0000";
   XGA <= '0';
   XZCKE <= '0';
+  ZCLKMA(0) <= clk;
+  ZCLKMA(1) <= clk;
   ADVA <= '0';
   XFT <= '1';
   XLBO <= '1';

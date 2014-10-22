@@ -6,7 +6,7 @@ use work.Util.all;
 entity BlockRAM is
   port (
     clk : in std_logic;
-    addr : in std_logic_vector(19 downto 0);
+    addr : in std_logic_vector(13 downto 0);
     rx : out std_logic_vector(31 downto 0);
     rx_en : in std_logic;
     tx : in std_logic_vector(31 downto 0);
@@ -115,9 +115,57 @@ architecture Behavioral of BlockRAM is
     46 => x"c00f0000",
     others => (others => '0'));
 
-  signal ram : ram_t := myramfib2;
+  constant myramfib3 : ram_t := (
+    0 => x"00000000",
+    1 => x"c00f001f",
+    2 => x"02000002",
+    3 => x"d12f001b",
+    4 => x"0dd0ffff",
+    5 => x"901d0000",
+    6 => x"0110ffff",
+    7 => x"90edffff",
+    8 => x"90fdfffe",
+    9 => x"0dd0fffe",
+    10 => x"0ed00000",
+    11 => x"c00ffff7",
+    12 => x"0de00002",
+    13 => x"8e0dffff",
+    14 => x"02010000",
+    15 => x"810d0000",
+    16 => x"0dd00001",
+    17 => x"0dd0ffff",
+    18 => x"902d0000",
+    19 => x"0110fffe",
+    20 => x"90edffff",
+    21 => x"90fdfffe",
+    22 => x"0dd0fffe",
+    23 => x"0ed00000",
+    24 => x"c00fffea",
+    25 => x"0de00002",
+    26 => x"8e0dffff",
+    27 => x"820d0000",
+    28 => x"0dd00001",
+    29 => x"01120000",
+    30 => x"8c0e0000",
+    31 => x"c00c0004",
+    32 => x"0100000a",
+    33 => x"90edffff",
+    34 => x"90fdfffe",
+    35 => x"0dd0fffe",
+    36 => x"0ed00000",
+    37 => x"c00fffdd",
+    38 => x"0de00002",
+    39 => x"8e0dffff",
+    40 => x"b0100000",
+    41 => x"c00f0000",
+    42 => x"c00f0000",
+    43 => x"c00f0000",
+    44 => x"c00f0000",
+    others => (others => '0'));
 
-  signal addr_reg : std_logic_vector(19 downto 0) := (others => '0');
+  signal ram : ram_t := myramfib3;
+
+  signal addr_reg : std_logic_vector(13 downto 0) := (others => '0');
 
 begin
 
