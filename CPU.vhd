@@ -100,11 +100,11 @@ begin
         ram_rx_en <= '1';
         ram_tx_en <= '0';
       elsif mystate = EXECUTING and myopcode = "1000" then
-        ram_addr <= myoperand2 + myoperand3;
+        ram_addr <= myoperand2(19 downto 0) + myoperand3(19 downto 0);
         ram_rx_en <= '1';
         ram_tx_en <= '0';
       elsif mystate = EXECUTING and myopcode = "1001" then
-        ram_addr <= myoperand2 + myoperand3;
+        ram_addr <= myoperand2(19 downto 0) + myoperand3(19 downto 0);
         ram_tx_data <= myoperand1;
         ram_tx_en <= '1';
         ram_rx_en <= '0';
@@ -179,7 +179,7 @@ begin
 
     case mycode(31 downto 29) is
       when "100" =>
-        mynextcount <= 1;
+        mynextcount <= 3;
       when others =>
         mynextcount <= 0;
     end case;
@@ -220,7 +220,7 @@ begin
             my_nextpc <= mypc + 1;
           end if;
         else
-          if myoperand0 <= myoperand1 then
+          if myoperand1 - myoperand0 < x"80000000" then
             my_nextpc <= myoperand2 + myoperand3;
           else
             my_nextpc <= mypc + 1;
