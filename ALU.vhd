@@ -18,6 +18,7 @@ begin
 
   -- combinational
   process(code, arg0, arg1, ival)
+    variable total, shift : std_logic_vector(31 downto 0);
   begin
     case code is
       when "00" =>
@@ -25,10 +26,21 @@ begin
       when "01" =>
         retv <= arg0 - arg1;
       when "10" =>
-        if ival(31) = '0' then
-          retv <= std_logic_vector(shift_left(unsigned(arg0), to_integer(unsigned(ival))));
+        total := arg1 + ival;
+        if total(31) = '0' then
+          shift := total;
         else
-          retv <= std_logic_vector(shift_right(unsigned(arg0), -to_integer(signed(ival))));
+          shift := (not total) + 1;
+        end if;
+
+        if shift >= 32 then
+          retv <= (others => '0');
+        else
+          if total(31) = '0' then
+            retv <= std_logic_vector(shift_left(unsigned(arg0), to_integer(unsigned(shift))));
+          else
+            retv <= std_logic_vector(shift_right(unsigned(arg0), to_integer(unsigned(shift))));
+          end if;
         end if;
       when "11" =>
         retv <= not arg0(31) & arg0(30 downto 0);
