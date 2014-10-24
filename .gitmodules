@@ -1,0 +1,3 @@
+[submodule "FPU"]
+	path = FPU
+	url = https://github.com/shiki49/yebi.git

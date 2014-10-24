@@ -30,6 +30,14 @@ architecture Behavioral of CPU is
       retv : out std_logic_vector(31 downto 0));
   end component;
 
+  component FPU is
+    port (
+      code : in std_logic_vector(1 downto 0);
+      arg0 : in std_logic_vector(31 downto 0);
+      arg1 : in std_logic_vector(31 downto 0);
+      retv : out std_logic_vector(31 downto 0));
+  end component;
+
   signal myregfile, my_regfile : regfile_t := (others => (others => '0'));
   signal mystate : state_t := FETCHING;
   signal mycount : integer range 0 to 3 := 1;
@@ -54,6 +62,11 @@ architecture Behavioral of CPU is
   signal myALUcode : std_logic_vector(1 downto 0) := (others => '0');
   signal myALUretx : std_logic_vector(3 downto 0) := (others => '0');
   signal myALUretv : std_logic_vector(31 downto 0) := (others => '0');
+  signal myFPUarg1 : std_logic_vector(31 downto 0) := (others => '0');
+  signal myFPUarg2 : std_logic_vector(31 downto 0) := (others => '0');
+  signal myFPUcode : std_logic_vector(1 downto 0) := (others => '0');
+  signal myFPUretx : std_logic_vector(3 downto 0) := (others => '0');
+  signal myFPUretv : std_logic_vector(31 downto 0) := (others => '0');
   signal myIOretx : std_logic_vector(3 downto 0) := (others => '0');
   signal myIOretv : std_logic_vector(31 downto 0) := (others => '0');
   signal myRAMretx : std_logic_vector(3 downto 0) := (others => '0');
@@ -70,6 +83,12 @@ begin
     arg1 => myALUarg2,
     ival => myALUarg3,
     retv => myALUretv);
+
+  myFPU : FPU port map (
+    code => myFPUcode,
+    arg0 => myFPUarg1,
+    arg1 => myFPUarg2,
+    retv => myFPUretv);
 
   process(clk)
   begin
@@ -208,6 +227,23 @@ begin
     end case;
   end process;
 
+  -- FPU
+  process(myopcode, myregindex, myoperand1, myoperand2)
+  begin
+    case myopcode(3 downto 2) is
+      when "01" =>
+        myFPUcode <= myopcode(1 downto 0);
+        myFPUarg1 <= myoperand1;
+        myFPUarg2 <= myoperand2;
+        myFPUretx <= myregindex;
+      when others =>
+        myFPUcode <= (others => '0');
+        myFPUarg1 <= (others => '0');
+        myFPUarg2 <= (others => '0');
+        myFPUretx <= (others => '0');
+    end case;
+  end process;
+
   -- Branch
   process(mypc, myopcode, myoperand0, myoperand1, myoperand2, myoperand3)
   begin
@@ -264,12 +300,15 @@ begin
   end process;
 
   -- Join
-  process(myopcode, myALUretx, myALUretv, myIOretx, myIOretv, myRAMretx, myRAMretv)
+  process(myopcode, myALUretx, myALUretv, myFPUretx, myFPUretv, myIOretx, myIOretv, myRAMretx, myRAMretv)
   begin
     case myopcode(3 downto 2) is
       when "00" =>
         my_retx <= myALUretx;
         my_retv <= myALUretv;
+      when "01" =>
+        my_retx <= myFPUretx;
+        my_retv <= myFPUretv;
       when "10" =>
         case myopcode(1) is
           when '0' =>
