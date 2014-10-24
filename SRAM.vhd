@@ -62,7 +62,7 @@ begin
   ZCLKMA(0) <= clk;
   ZCLKMA(1) <= clk;
   ADVA <= '0';
-  XFT <= '1';
+  XFT <= '0';
   XLBO <= '1';
   ZZA <= '0';
 
