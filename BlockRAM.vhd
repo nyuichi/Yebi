@@ -8,7 +8,6 @@ entity BlockRAM is
     clk : in std_logic;
     addr : in std_logic_vector(13 downto 0);
     rx : out std_logic_vector(31 downto 0);
-    rx_en : in std_logic;
     tx : in std_logic_vector(31 downto 0);
     tx_en : in std_logic);
 end BlockRAM;
@@ -42,7 +41,7 @@ architecture Behavioral of BlockRAM is
     9 => x"C00FFFFB",                        -- 9 br LOOP
                                         --  EXIT:
     10 => x"B0100000",                        -- A write $1
-    11 => x"C00FFFFF",                        -- B br EXIT
+    11 => x"C00F0000",                        -- B br $ip
     others => (others => '0'));
 
   constant myramlo : ram_t := (
@@ -163,7 +162,74 @@ architecture Behavioral of BlockRAM is
     44 => x"c00f0000",
     others => (others => '0'));
 
-  signal ram : ram_t := myramfib3;
+  constant myramboot : ram_t := (
+    0 => x"00000000",
+    1 => x"c00f0007",
+    2 => x"a1000000",
+    3 => x"d01f0002",
+    4 => x"c00ffffe",
+    5 => x"8c0e0000",
+    6 => x"c00c0004",
+    7 => x"c00f0000",
+    8 => x"05004001",
+    9 => x"06000003",
+    10 => x"870ffffd",
+    11 => x"0d000001",
+    12 => x"2dd00014",
+    13 => x"0e0d0000",
+    14 => x"90edffff",
+    15 => x"90fdfffe",
+    16 => x"0dd0fffe",
+    17 => x"0ed00000",
+    18 => x"c00ffff0",
+    19 => x"0de00002",
+    20 => x"8e0dffff",
+    21 => x"04010000",
+    22 => x"90edffff",
+    23 => x"90fdfffe",
+    24 => x"0dd0fffe",
+    25 => x"0ed00000",
+    26 => x"c00fffe8",
+    27 => x"0de00002",
+    28 => x"8e0dffff",
+    29 => x"03010000",
+    30 => x"90edffff",
+    31 => x"90fdfffe",
+    32 => x"0dd0fffe",
+    33 => x"0ed00000",
+    34 => x"c00fffe0",
+    35 => x"0de00002",
+    36 => x"8e0dffff",
+    37 => x"02010000",
+    38 => x"90edffff",
+    39 => x"90fdfffe",
+    40 => x"0dd0fffe",
+    41 => x"0ed00000",
+    42 => x"c00fffd8",
+    43 => x"0de00002",
+    44 => x"8e0dffff",
+    45 => x"22200008",
+    46 => x"23300010",
+    47 => x"24400018",
+    48 => x"01120000",
+    49 => x"03340000",
+    50 => x"01130000",
+    51 => x"90150000",
+    52 => x"05500001",
+    53 => x"c17f0003",
+    54 => x"06000003",
+    55 => x"c00fffd7",
+    56 => x"0660ffff",
+    57 => x"c60f0002",
+    58 => x"c00fffd4",
+    59 => x"90504000",
+    60 => x"c0004001",
+    61 => x"c00f0000",
+    62 => x"c00f0000",
+    63 => x"c00f0000",
+    others => (others => '0'));
+
+  signal ram : ram_t := myramboot;
 
   signal addr_reg : std_logic_vector(13 downto 0) := (others => '0');
 

@@ -6,7 +6,6 @@ entity SRAM is
     clk : in std_logic;
     addr : in std_logic_vector(19 downto 0);
     rx : out std_logic_vector(31 downto 0);
-    rx_en : in std_logic;
     tx : in std_logic_vector(31 downto 0);
     tx_en : in std_logic;
 
@@ -29,33 +28,29 @@ entity SRAM is
 end SRAM;
 
 architecture Behavioral of SRAM is
+
+  signal prev_tx : std_logic_vector(31 downto 0) := (others => '0');
+  signal prev_tx_en : std_logic := '0';
+
 begin
 
   process(clk)
   begin
     if rising_edge(clk) then
-      if tx_en = '1' then
-        XWA <= '0';
-      else
-        XWA <= '1';
-      end if;
-
-      if rx_en = '1' then
-        ZD <= (others => 'Z');
-      elsif tx_en = '1' then
-        ZD <= tx;
-      end if;
-
-      rx <= ZD;
+      prev_tx <= tx;
+      prev_tx_en <= tx_en;
     end if;
   end process;
 
--- ignore ZDP
+  rx <= ZD;
+
   ZA <= addr;
-  ZDP <= (others => 'Z');
+  ZD <= prev_tx when prev_tx_en = '1' else (others => 'Z');
+  ZDP <= "0000" when prev_tx_en = '1' else (others => 'Z');
   XE1 <= '0';
   E2A <= '1';
   XE3 <= '0';
+  XWA <= not tx_en;
   XZBE <= "0000";
   XGA <= '0';
   XZCKE <= '0';

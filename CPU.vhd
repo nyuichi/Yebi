@@ -122,7 +122,7 @@ begin
         ram_addr <= myoperand2(19 downto 0) + myoperand3(19 downto 0);
         ram_rx_en <= '1';
         ram_tx_en <= '0';
-      elsif mystate = EXECUTING and myopcode = "1001" then
+      elsif mystate = EXECUTING and myopcode = "1001" and mycount = 3 then
         ram_addr <= myoperand2(19 downto 0) + myoperand3(19 downto 0);
         ram_tx_data <= myoperand1;
         ram_tx_en <= '1';

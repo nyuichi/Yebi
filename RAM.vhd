@@ -35,7 +35,6 @@ architecture Behavioral of RAM is
       clk : in std_logic;
       addr : in std_logic_vector(19 downto 0);
       rx : out std_logic_vector(31 downto 0);
-      rx_en : in std_logic;
       tx : in std_logic_vector(31 downto 0);
       tx_en : in std_logic;
 
@@ -62,13 +61,12 @@ architecture Behavioral of RAM is
       clk : in std_logic;
       addr : in std_logic_vector(13 downto 0);
       rx : out std_logic_vector(31 downto 0);
-      rx_en : in std_logic;
       tx : in std_logic_vector(31 downto 0);
       tx_en : in std_logic);
   end component;
 
   signal sram_rx, bram_rx : std_logic_vector(31 downto 0);
-  signal sram_tx_en, sram_rx_en, bram_tx_en, bram_rx_en : std_logic;
+  signal sram_tx_en, bram_tx_en, bram_rx_en : std_logic;
 
 begin
 
@@ -76,7 +74,6 @@ begin
     clk => clk,
     addr => addr,
     rx => sram_rx,
-    rx_en => sram_rx_en,
     tx => tx,
     tx_en => sram_tx_en,
     ZD => ZD,
@@ -99,7 +96,6 @@ begin
     clk => clk,
     addr => addr(13 downto 0),
     rx => bram_rx,
-    rx_en => bram_rx_en,
     tx => tx,
     tx_en => bram_tx_en);
 
@@ -107,8 +103,5 @@ begin
 
   sram_tx_en <= '1' when addr >= x"04000" and tx_en = '1' else '0';
   bram_tx_en <= '1' when addr < x"04000" and tx_en = '1' else '0';
-
-  sram_rx_en <= '1' when addr >= x"04000" and rx_en = '1' else '0';
-  bram_rx_en <= '1' when addr < x"04000" and rx_en = '1' else '0';
 
 end Behavioral;
