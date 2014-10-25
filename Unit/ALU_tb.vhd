@@ -21,10 +21,10 @@ architecture Behavioral of ALU_tb is
   signal clk_gen : std_logic;
 
   signal mycode : std_logic_vector(1 downto 0) := "00";
-  signal myarg0 : std_logic_vector(31 downto 0);
-  signal myarg1 : std_logic_vector(31 downto 0);
-  signal myival : std_logic_vector(31 downto 0);
-  signal myretv : std_logic_vector(31 downto 0);
+  signal myarg0 : std_logic_vector(31 downto 0) := (others => '0');
+  signal myarg1 : std_logic_vector(31 downto 0) := (others => '0');
+  signal myival : std_logic_vector(31 downto 0) := (others => '0');
+  signal myretv : std_logic_vector(31 downto 0) := (others => '0');
 
 begin
 
@@ -90,6 +90,34 @@ begin
 
     assert myretv = x"00000320";
 
+    -- SHIFT LEFT(2)
+
+    mycode <= "10";
+
+    wait for 15 ns;
+
+    myarg0 <= x"00000064";
+    myarg1 <= x"00000004";
+    myival <= x"00000003";
+
+    wait for 30 ns;
+
+    assert myretv = x"00003200";
+
+    -- SHIFT LEFT(3)
+
+    mycode <= "10";
+
+    wait for 15 ns;
+
+    myarg0 <= x"00000064";
+    myarg1 <= x"00000032";
+    myival <= x"00000003";
+
+    wait for 30 ns;
+
+    assert myretv = x"00000000";
+
     -- SHIFT RIGHT
 
     mycode <= "10";
@@ -103,6 +131,34 @@ begin
     wait for 30 ns;
 
     assert myretv = x"0000000c";
+
+    -- SHIFT RIGHT(2)
+
+    mycode <= "10";
+
+    wait for 15 ns;
+
+    myarg0 <= x"00000064";
+    myarg1 <= x"00000001";
+    myival <= x"fffffffd";
+
+    wait for 30 ns;
+
+    assert myretv = x"00000019";
+
+    -- SHIFT RIGHT(3)
+
+    mycode <= "10";
+
+    wait for 15 ns;
+
+    myarg0 <= x"00000064";
+    myarg1 <= x"ffffff00";
+    myival <= x"fffffffd";
+
+    wait for 30 ns;
+
+    assert myretv = x"00000000";
 
     -- FNEG
 
