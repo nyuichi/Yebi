@@ -43,7 +43,11 @@ begin
           end if;
         end if;
       when "11" =>
-        retv <= not arg0(31) & arg0(30 downto 0);
+        if arg0 = 0 then
+          retv <= arg0;
+        else
+          retv <= not arg0(31) & arg0(30 downto 0);
+        end if;
       when others =>
         retv <= (others => 'Z');
     end case;
