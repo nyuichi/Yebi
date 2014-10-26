@@ -13,7 +13,10 @@ end Tx;
 
 architecture Behavioral of Tx is
 
-  constant wtime : std_logic_vector(15 downto 0) := x"1ADB";
+  -- 9600 bps: 1ADB
+  -- 115200 bps: 023D
+
+  constant wtime : std_logic_vector(15 downto 0) := x"023D";
 
   signal buf : std_logic_vector(8 downto 0) := (others => '1');
   signal count : std_logic_vector(15 downto 0) := wtime;

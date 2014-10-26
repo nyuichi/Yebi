@@ -13,7 +13,7 @@ end Rx;
 
 architecture Behavioral of Rx is
 
-  constant wtime : std_logic_vector(15 downto 0) := x"1ADB";
+  constant wtime : std_logic_vector(15 downto 0) := x"023D";
 
   signal buf : std_logic_vector(8 downto 0) := (others => '0');
   signal count : std_logic_vector(15 downto 0) := "0" & wtime(15 downto 1);
