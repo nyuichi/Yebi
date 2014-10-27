@@ -40,7 +40,7 @@ architecture Behavioral of CPU is
 
   signal myregfile, my_regfile : regfile_t := (others => (others => '0'));
   signal mystate : state_t := FETCHING;
-  signal mycount : integer range 0 to 3 := 1;
+  signal mycount : integer range 0 to 3 := 2;
 
   -- Fetch
   signal mypc, my_pc : std_logic_vector(31 downto 0) := (others => '0');
@@ -53,7 +53,7 @@ architecture Behavioral of CPU is
   signal myoperand1, my_operand1 : std_logic_vector(31 downto 0) := (others => '0');
   signal myoperand2, my_operand2 : std_logic_vector(31 downto 0) := (others => '0');
   signal myoperand3, my_operand3 : std_logic_vector(31 downto 0) := (others => '0');
-  signal mynextcount : integer range 0 to 3 := 3;
+  signal mynextcount : integer range 0 to 3 := 2;
 
   -- Execute
   signal myALUarg1 : std_logic_vector(31 downto 0) := (others => '0');
@@ -163,7 +163,7 @@ begin
           end if;
         when WRITING =>
           mystate <= FETCHING;
-          mycount <= 3;
+          mycount <= 2;
       end case;
     end if;
   end process;
