@@ -40,7 +40,7 @@ architecture Behavioral of CPU is
 
   signal myregfile, my_regfile : regfile_t := (others => (others => '0'));
   signal mystate : state_t := FETCHING;
-  signal mycount : integer range 0 to 3 := 2;
+  signal mycount : integer range 0 to 2 := 2;
 
   -- Fetch
   signal mypc, my_pc : std_logic_vector(31 downto 0) := (others => '0');
@@ -122,7 +122,7 @@ begin
         ram_addr <= myoperand2(19 downto 0) + myoperand3(19 downto 0);
         ram_rx_en <= '1';
         ram_tx_en <= '0';
-      elsif mystate = EXECUTING and myopcode = "1001" and mycount = 3 then
+      elsif mystate = EXECUTING and myopcode = "1001" and mycount = 2 then
         ram_addr <= myoperand2(19 downto 0) + myoperand3(19 downto 0);
         ram_tx_data <= myoperand1;
         ram_tx_en <= '1';
@@ -198,7 +198,7 @@ begin
 
     case mycode(31 downto 29) is
       when "100" =>
-        mynextcount <= 3;
+        mynextcount <= 2;
       when others =>
         mynextcount <= 0;
     end case;
